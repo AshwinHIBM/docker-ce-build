@@ -214,6 +214,7 @@ cd /workspace/docker-ce-packaging/static
 CONT_NAME=docker-build-static
 # https://quay.io/repository/powercloud/docker-ce-build?tab=tags
 QUAYIO_REPOSITORY="powercloud"
+QUAYIO_HASH="20890c8770ff57f91eb9f16fbb9f9e979958cd02b2a3c03795d2587e7b58a9db"
 # Test ! Test a new DockerInDocker image before pushing it to Raji's Production Cluster
 # https://quay.io/repository/trex58i/docker-ce-build?tab=tags
 #QUAYIO_REPOSITORY="trex58i"
@@ -234,7 +235,7 @@ echo "docker run -d \
            ${DOCKER_SECRET_AUTH_IN_ENV} \
            --privileged \
            --name ${CONT_NAME} \
-           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build \
+           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build@sha256:${QUAYIO_HASH} \
            ${PATH_SCRIPTS}/build-static.sh"
            
 docker run -d \
@@ -245,7 +246,7 @@ docker run -d \
            ${DOCKER_SECRET_AUTH_IN_ENV} \
            --privileged \
            --name ${CONT_NAME} \
-           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build \
+           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build@sha256:${QUAYIO_HASH} \
            ${PATH_SCRIPTS}/build-static.sh
 
 status_code="$(docker container wait ${CONT_NAME})"
