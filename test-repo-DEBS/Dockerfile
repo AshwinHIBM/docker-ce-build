@@ -1,6 +1,6 @@
 # Dockerfile to run the staging tests
 
-ARG GOLANG_VERSION=1.16
+ARG GOLANG_VERSION=1.19.9
 ARG DISTRO_NAME
 ARG DISTRO_VERS
 ARG REPO_HOSTNAME=download-stage.docker.com
@@ -18,22 +18,23 @@ ENV WORKSPACE=/workspace \
     TERM=xterm
 ENV PATH /usr/local/go/bin:$PATH
 
-RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y tzdata
+RUN apt-get -y update && apt-get -y upgrade && DEBIAN_FRONTEND="noninteractive" apt-get install -y tzdata
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
+    cmake \
     curl \
     dbus-user-session \
     git \
     gnupg2 \
-    wget \
     software-properties-common \
     lsb-release\
     make\
     gcc\
     libc-dev\
     procps\
+    tini \
     iptables libdevmapper1.02.1 && \
     rm -rf /var/lib/apt/lists/*
 
@@ -56,22 +57,24 @@ RUN set -eux; \
 
 COPY test-launch.sh /usr/local/bin/test-launch.sh
 
-# https://github.com/docker/docker/tree/master/hack/dind
-ENV DIND_COMMIT 42b1175eda071c0e9121e1d64345928384a93df1
-# ENV DIND_COMMIT ed89041433a031cafc0a0f19cfe573c31688d377
-ENV DOCKERD_COMMIT 8baa881aab85f8398d2edbbcc0da4bd1f556dd98
-# ENV DOCKERD_COMMIT 094faa88f437cafef7aeb0cc36e75b59046cc4b9
+# Commit pointing to the latest Docker-in-Docker script as of May 16, 2023.
+# https://github.com/moby/moby/tree/master/hack/dind
+ENV DIND_COMMIT 1f32e3c95d72a29b3eaacba156ed675dba976cb5
+# Commit pointing to the latest stable Dockerd-entrypoint script as of May 16, 2023.
+# https://github.com/docker-library/docker/tree/master/23.0/dind
+ENV DOCKERD_COMMIT a3ca225e9c0e568cf87a7b60c951b939c3964c91
 
 RUN set -eux; \
-        wget -O /usr/local/bin/dind "https://raw.githubusercontent.com/docker/docker/${DIND_COMMIT}/hack/dind"; \
-        wget -O /usr/local/bin/dockerd-entrypoint.sh "https://raw.githubusercontent.com/docker-library/docker/${DOCKERD_COMMIT}/20.10/dind/dockerd-entrypoint.sh"; \
+        curl "https://raw.githubusercontent.com/moby/moby/${DIND_COMMIT}/hack/dind" -o /usr/local/bin/dind; \
+        curl "https://raw.githubusercontent.com/docker-library/docker/${DOCKERD_COMMIT}/23.0/dind/dockerd-entrypoint.sh" -o /usr/local/bin/dockerd-entrypoint.sh; \
         chmod +x /usr/local/bin/dind; \
         chmod +x /usr/local/bin/dockerd-entrypoint.sh; \
+        cp $(which tini) "/usr/local/bin/docker-init"; \
         chmod +x /usr/local/bin/test-launch.sh;
 
 RUN set -eux; \
     url="https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-ppc64le.tar.gz";\
-    wget -O go.tgz "$url" --progress=dot:giga; \
+    curl "$url" -o go.tgz --progress-bar; \
     tar -C /usr/local -xzf go.tgz; \
     rm go.tgz; \
     go version;
