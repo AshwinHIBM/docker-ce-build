@@ -54,7 +54,12 @@ testDynamicPackages() {
   local BUILD_LOG="build_${DISTRO_NAME}_${DISTRO_VERS}.log"
   local TEST_LOG="test_${DISTRO_NAME}_${DISTRO_VERS}.log"
   local TEST_JUNIT="junit-tests-${DISTRO_NAME}-${DISTRO_VERS}.xml"
-
+  local BUILD_ARGS=""
+  local DIND_COMMIT_DEBS="${DIND_COMMIT_DEBS}"
+  local DIND_COMMIT_RPMS="${DIND_COMMIT_RPMS}"
+  local DOCKERD_COMMIT_DEBS="${DOCKERD_COMMIT_DEBS}"
+  local DOCKERD_COMMIT_RPMS="${DOCKERD_COMMIT_RPMS}"
+  local TINI_VERSION="${TINI_VERSION}"
   export DISTRO_NAME
   export DISTRO_VERS
 
@@ -100,6 +105,13 @@ testDynamicPackages() {
     fi
   fi
 
+# Pass in the appropriate commits for DinD and dockerd-entrypoint.sh
+  if [[ ${PACKTYPE} == "DEBS" ]];then 
+      BUILD_ARGS+=" --build-arg DIND_COMMIT=${DIND_COMMIT_DEBS} --build-arg DOCKERD_COMMIT=${DOCKERD_COMMIT_DEBS}"
+  elif [[ ${PACKTYPE} == "RPMS" ]];then
+      BUILD_ARGS+=" --build-arg DIND_COMMIT=${DIND_COMMIT_RPMS} --build-arg DOCKERD_COMMIT=${DOCKERD_COMMIT_RPMS} --build-arg TINI_VERSION=${TINI_VERSION}"
+  fi
+
   echo "### # Building the test image: ${IMAGE_NAME} # ###"
   # Building the test image
   if [[ "${DISTRO_NAME}:${DISTRO_VERS}" == centos:8 ]]
@@ -122,7 +134,7 @@ testDynamicPackages() {
     sed -i 's/FROM ppc64le.*/FROM quay.io\/centos\/centos\:stream9/g' Dockerfile
   fi
 
-  local BUILD_ARGS="--build-arg DISTRO_NAME=${DISTRO_NAME} --build-arg DISTRO_VERS=${DISTRO_VERS}"
+  BUILD_ARGS+=" --build-arg DISTRO_NAME=${DISTRO_NAME} --build-arg DISTRO_VERS=${DISTRO_VERS}"
 
   if [[ "$TEST_MODE" = "staging" || "$TEST_MODE" = "release"  ]]; then
     echo "Setup REPO_HOSTNAME=${REPO_HOSTNAME}"
