@@ -1,0 +1,35 @@
+name: Build and Push Image
+on:
+  push:
+    paths:
+      - images/**
+env:
+  IMAGE_VERSION: 0.7-ppc64le
+jobs:
+  build:
+    name: Build and push image
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build Image
+      id: build-image
+      uses: redhat-actions/buildah-build@v2
+      with:
+        archs: ppc64le
+        image: quay.io/ahendre3/docker-ce-build
+        tags: latest ${{ env.IMAGE_VERSION }}
+        containerfiles: ./images/docker-in-docker/Dockerfile
+
+    # Podman Login action (https://github.com/redhat-actions/podman-login) also be used to log in,
+    # in which case 'username' and 'password' can be omitted.
+    - name: Push To quay.io
+      id: push-to-quay
+      uses: redhat-actions/push-to-registry@v2
+      with:
+        tags: quay.io/ahendre3/docker-ce-build:latest
+        username: ahendre3
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+    - name: Print image url
+      run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
