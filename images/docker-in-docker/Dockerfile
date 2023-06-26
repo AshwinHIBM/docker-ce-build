@@ -81,7 +81,7 @@ ENV DIND_COMMIT d58df1fc6c866447ce2cd129af10e5b507705624
 # https://github.com/docker-library/docker/tree/master/24/dind
 ENV DOCKERD_COMMIT 6964fd52030c2e6e9e0943eaac07d78c9841fbb3
 RUN set -eux; \
- wget -O /usr/local/bin/dind "https://raw.githubusercontent.com/moby/moby/${DIND_COMMIT}/hack/dind"; \    
+wget -O /usr/local/bin/dind "https://raw.githubusercontent.com/moby/moby/${DIND_COMMIT}/hack/dind"; \    
 wget -O /usr/local/bin/dockerd-entrypoint.sh "https://raw.githubusercontent.com/docker-library/docker/${DOCKERD_COMMIT}/24/dind/dockerd-entrypoint.sh"; \
 chmod +x /usr/local/bin/dind; \
 chmod +x /usr/local/bin/dockerd-entrypoint.sh;

@@ -13,23 +13,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Build Image
-      id: build-image
-      uses: redhat-actions/buildah-build@v2
+    - uses: docker/login-action@v2
       with:
-        archs: ppc64le
-        image: quay.io/ahendre3/docker-ce-build
-        tags: latest ${{ env.IMAGE_VERSION }}
-        containerfiles: ./images/docker-in-docker/Dockerfile
-
-    # Podman Login action (https://github.com/redhat-actions/podman-login) also be used to log in,
-    # in which case 'username' and 'password' can be omitted.
-    - name: Push To quay.io
-      id: push-to-quay
-      uses: redhat-actions/push-to-registry@v2
-      with:
-        tags: quay.io/ahendre3/docker-ce-build:latest
         username: ahendre3
         password: ${{ secrets.REGISTRY_PASSWORD }}
-    - name: Print image url
-      run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+        registry: quay.io
+    - uses: docker/build-push-action@v3
+      with:
+        file: images/docker-in-docker/Dockerfile
+        tags: quay.io/ahendre3/docker-ce-build:latest
+        platforms: linux/ppc64le
+        push: true      
