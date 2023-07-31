@@ -1,0 +1,43 @@
+on: [push]
+
+jobs:
+  push_image:
+    # The host should always be Linux
+    runs-on: ubuntu-20.04
+    name: Push image to quay.io
+    steps:
+      - uses: actions/checkout@v3
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: ppc64le
+          distro: ubuntu20.04
+          # Set an output parameter `uname` for use in subsequent steps
+          run: |
+            yes | apt-get update
+            yes | apt-get -y upgrade
+            yes | apt-get install -y sudo ca-certificates curl apt-transport-https gnupg2 software-properties-common lsb-release build-essential ca-certificates file git libssl-dev make openssh-client pkg-config procps rsync tini unzip xz-utils zip zlib1g-dev iptables libdevmapper1.02.1
+            rm -rf /var/lib/apt/lists/*
+            mkdir -p /workspace/tmp
+            export CONTAINERD_VERSION=1.6.21-1
+            export DOCKER_VERSION=24.0.2-1
+            curl https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/ppc64el/containerd.io_${CONTAINERD_VERSION}_ppc64el.deb -o /workspace/tmp/containerd.io_${CONTAINERD_VERSION}_ppc64el.deb
+            curl https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/ppc64el/docker-ce-cli_${DOCKER_VERSION}~ubuntu.20.04~focal_ppc64el.deb    -o /workspace/tmp/docker-ce-cli_${DOCKER_VERSION}~ubuntu.20.04~focal_ppc64el.deb
+            curl https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/ppc64el/docker-ce_${DOCKER_VERSION}~ubuntu.20.04~focal_ppc64el.deb -o /workspace/tmp/docker-ce_${DOCKER_VERSION}~ubuntu.20.04~focal_ppc64el.deb
+            curl https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/ppc64el/docker-buildx-plugin_0.10.5-1~ubuntu.20.04~focal_ppc64el.deb -o /workspace/tmp/docker-buildx-plugin_0.11.1-1~ubuntu.20.04~focal_ppc64el.deb 
+            dpkg -i /workspace/tmp/*
+            rm -rf /workspace/tmp
+            rm -rf /var/lib/apt/lists/*
+            addgroup --system dockremap
+            adduser --system --ingroup dockremap dockremap
+            echo 'dockremap:165536:65536' >> /etc/subuid
+            echo 'dockremap:165536:65536' >> /etc/subgid
+            export DIND_COMMIT=d58df1fc6c866447ce2cd129af10e5b507705624
+            export DOCKERD_COMMIT=6964fd52030c2e6e9e0943eaac07d78c9841fbb3
+            curl https://raw.githubusercontent.com/moby/moby/${DIND_COMMIT}/hack/dind -o /usr/local/bin/dind
+            curl https://raw.githubusercontent.com/docker-library/docker/${DOCKERD_COMMIT}/24/dind/dockerd-entrypoint.sh -o /usr/local/bin/dockerd-entrypoint.sh
+            chmod +x /usr/local/bin/dind
+            chmod +x /usr/local/bin/dockerd-entrypoint.sh
+            cp $(which tini) "/usr/local/bin/docker-init"; \
+            bash dockerd-entrypoint.sh
