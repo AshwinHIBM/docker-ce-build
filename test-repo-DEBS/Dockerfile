@@ -59,10 +59,10 @@ COPY test-launch.sh /usr/local/bin/test-launch.sh
 
 # Commit pointing to the latest Docker-in-Docker script as of May 16, 2023.
 # https://github.com/moby/moby/tree/master/hack/dind
-ENV DIND_COMMIT 1f32e3c95d72a29b3eaacba156ed675dba976cb5
+ARG DIND_COMMIT=1f32e3c95d72a29b3eaacba156ed675dba976cb5
 # Commit pointing to the latest stable Dockerd-entrypoint script as of May 16, 2023.
 # https://github.com/docker-library/docker/tree/master/23.0/dind
-ENV DOCKERD_COMMIT a3ca225e9c0e568cf87a7b60c951b939c3964c91
+ARG DOCKERD_COMMIT=a3ca225e9c0e568cf87a7b60c951b939c3964c91
 
 RUN set -eux; \
         curl "https://raw.githubusercontent.com/moby/moby/${DIND_COMMIT}/hack/dind" -o /usr/local/bin/dind; \
