@@ -33,7 +33,8 @@ RUN apt-get -y update && apt-get -y upgrade && DEBIAN_FRONTEND="noninteractive" 
     procps\
     tini \
     iptables libdevmapper1.02.1 && \
-    rm -rf /var/lib/apt/lists/* 
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get -y clean
 
 COPY bundles-*.tar.gz /workspace/
 COPY *.deb /workspace/

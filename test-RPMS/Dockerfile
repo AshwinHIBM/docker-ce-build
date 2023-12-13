@@ -29,7 +29,8 @@ COPY test-launch.sh /usr/local/bin/test-launch.sh
 
 RUN set -eux; \
     tar -xvzf bundles-*.tar.gz --wildcards  --strip-components 6 '*/RPMS/*' &&\
-    yum -y localinstall *.rpm
+    yum -y localinstall *.rpm && \
+    yum -y clean all
 
 ##
 #Docker in Docker inspired from

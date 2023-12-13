@@ -23,7 +23,8 @@ RUN yum install -y dnf-plugins-core || :; \
     yum config-manager --set-enabled powertools || :; \
     yum config-manager --set-enabled PowerTools || :
 
-RUN set -eux; yum -y install make gcc git glibc-static cmake findutils procps-ng
+RUN set -eux; yum -y install make gcc git glibc-static cmake findutils procps-ng && \
+    yum -y clean all
 
 RUN set -eux; yum install -y yum-utils &&\
 	yum-config-manager --add-repo https://${REPO_HOSTNAME}/linux/${DISTRO_NAME}/docker-ce-staging.repo &&\
