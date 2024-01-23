@@ -69,7 +69,7 @@ popd  # docker-ce-packaging/static
 pushd docker-ce-packaging/static/build/linux/tmp
 FILES="*"
 # A "tag" is identical to the version, plus a "v" at first.
-DOCKER_VERSION=`echo $DOCKER_REF | sed "s/^v//"`
+DOCKER_VERSION=`echo $DOCKER_TAG | sed "s/^v//"`
 for f in $FILES
 do
   mv $f "${f//${DOCKER_VERSION}/ppc64le}"
