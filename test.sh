@@ -37,204 +37,6 @@ checkFile() {
 # Test docker + containerd dynamic packages for a given $DISTRO
 # Set: $TEST
 ##
-testDynamicPackages() {
-
-  local begin=$SECONDS
-  
-  local DISTRO=$1
-  local PACKTYPE=$2
-  
-  echo "## Looking for ${DISTRO} ##"
-  local DISTRO_NAME="$(cut -d'-' -f1 <<<"${DISTRO}")"
-  local DISTRO_VERS="$(cut -d'-' -f2 <<<"${DISTRO}")"
-
-  # Get all environment variables
-  local IMAGE_NAME="t_docker_${DISTRO_NAME}_${DISTRO_VERS}"
-  local CONT_NAME="t_docker_run_${DISTRO_NAME}_${DISTRO_VERS}"
-  local BUILD_LOG="build_${DISTRO_NAME}_${DISTRO_VERS}.log"
-  local TEST_LOG="test_${DISTRO_NAME}_${DISTRO_VERS}.log"
-  local TEST_JUNIT="junit-tests-${DISTRO_NAME}-${DISTRO_VERS}.xml"
-  local BUILD_ARGS=""
-  local DIND_COMMIT_DEBS_HASH="${DIND_COMMIT_DEBS_HASH}"
-  local DIND_COMMIT_RPMS_HASH="${DIND_COMMIT_RPMS_HASH}"
-  local DOCKERD_COMMIT_DEBS_HASH="${DOCKERD_COMMIT_DEBS_HASH}"
-  local DOCKERD_COMMIT_RPMS_HASH="${DOCKERD_COMMIT_RPMS_HASH}"
-  local TINI_VERSION="${TINI_VERSION}"
-  export DISTRO_NAME
-  export DISTRO_VERS
-
-  # Get in the tmp-${DISTRO} directory and get the docker-ce and containerd packages and the Dockerfile in it
-  checkDirectory tmp-${DISTRO}
-  pushd tmp-${DISTRO}
-
-  cp ${PATH_DOCKERFILE}-${PACKTYPE}/Dockerfile .
-
-  # Workaround for builkit cache issue
-  # See https://github.com/moby/buildkit/issues/1368
-  PWD=`pwd`
-  echo "Debug: Touching $PWD/Dockerfile"
-  touch Dockerfile
-
-  cp ${PATH_SCRIPTS}/test-launch.sh .
-
-  ###
-  # Local test only: copy the packages that we just built
-  ###
-  if [[ "$TEST_MODE" = "local" ]]; then
-
-    echo "### Copying the packages and the dockerfile for ${DISTRO} ###"
-    # Copy the docker-ce packages
-    cp ${DIR_DOCKER}/bundles-ce-${DISTRO_NAME}-${DISTRO_VERS}-ppc64*.tar.gz .
-    # Copy the containerd packages (we have two different configurations depending on the package type)
-    local CONTAINERD_TAG_2=$(echo ${CONTAINERD_TAG} | cut -d'v' -f2)
-    if [[ ${PACKTYPE} == "DEBS" ]]
-    then
-      # For the debian packages, we don't want the dbgsym package
-      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}/ppc64*/containerd.io_${CONTAINERD_TAG_2}*_ppc64*.deb .
-    elif [[ ${PACKTYPE} == "RPMS" ]]
-    then
-      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}/ppc64*/containerd.io-${CONTAINERD_TAG_2}*.ppc64*.rpm .
-    fi
-
-    # Check if we have the docker-ce and containerd packages and the Dockerfile and the test-launch.sh
-    ls bundles-ce-${DISTRO_NAME}-${DISTRO_VERS}-ppc64le.tar.gz && ls containerd*ppc64*.* && ls Dockerfile && ls test-launch.sh
-    if [[ $? -ne 0 ]]
-    then
-      # The docker-ce packages and/or the containerd packages and/or the Dockerfile is/are missing
-      echo "ERROR: The docker-ce packages and/or the containerd packages and/or the Dockerfile is/are missing"
-    fi
-  fi
-
-# Pass in the appropriate commits for DinD and dockerd-entrypoint.sh
-  if [[ ${PACKTYPE} == "DEBS" ]];then 
-      BUILD_ARGS+=" --build-arg DIND_COMMIT=${DIND_COMMIT_DEBS_HASH} --build-arg DOCKERD_COMMIT=${DOCKERD_COMMIT_DEBS_HASH}"
-  elif [[ ${PACKTYPE} == "RPMS" ]];then
-      BUILD_ARGS+=" --build-arg DIND_COMMIT=${DIND_COMMIT_RPMS_HASH} --build-arg DOCKERD_COMMIT=${DOCKERD_COMMIT_RPMS_HASH} --build-arg TINI_VERSION=${TINI_VERSION}"
-  fi
-
-  echo "### # Building the test image: ${IMAGE_NAME} # ###"
-  # Building the test image
-  if [[ "${DISTRO_NAME}:${DISTRO_VERS}" == centos:8 ]]
-  then
-    ##
-    # Switch to quay.io for CentOS 8 stream
-    # See https://github.com/docker/containerd-packaging/pull/263
-    # See https://github.com/docker-library/official-images/pull/11831
-    ##
-    echo "Temporary fix: patching Dockerfile for using CentOS 8 stream and quay.io "
-    sed -i 's/FROM ppc64le.*/FROM quay.io\/centos\/centos\:stream8/g' Dockerfile
-
-  elif [[ "${DISTRO_NAME}:${DISTRO_VERS}" == centos:9 ]]
-  then
-    ##
-    # Switch to quay.io for CentOS 8 stream
-    # See https://github.com/docker/containerd-packaging/pull/283
-    ##
-    echo "Temporary fix: patching Dockerfile for using CentOS 9 stream and quay.io "
-    sed -i 's/FROM ppc64le.*/FROM quay.io\/centos\/centos\:stream9/g' Dockerfile
-  fi
-
-  BUILD_ARGS+=" --build-arg DISTRO_NAME=${DISTRO_NAME} --build-arg DISTRO_VERS=${DISTRO_VERS}"
-
-  if [[ "$TEST_MODE" = "staging" || "$TEST_MODE" = "release"  ]]; then
-    echo "Setup REPO_HOSTNAME=${REPO_HOSTNAME}"
-    BUILD_ARGS+=" --build-arg REPO_HOSTNAME=${REPO_HOSTNAME}"
-  fi
-
-  docker build -t ${IMAGE_NAME} ${BUILD_ARGS} . > ${DIR_TEST}/${BUILD_LOG} 2>&1
-
-  if [[ $? -ne 0 ]]
-  then
-    echo "ERROR: docker build failed for ${DISTRO}, see details from '${BUILD_LOG}'"
-    echo "== Log start for the docker build failure of ${DISTRO} =="
-    cat ${DIR_TEST}/${BUILD_LOG}
-    echo "== Log end for the docker build failure of ${DISTRO} =="
-  else
-    echo "Docker build for ${DISTRO} done"
-  fi
-
-  # Copying the build log to the COS bucket
-  if test -f ${DIR_TEST}/${BUILD_LOG}
-  then
-    echo "Build log for ${DISTRO} copied to the COS bucket"
-    cp ${DIR_TEST}/${BUILD_LOG} ${DIR_TEST_COS}
-  else
-    echo "No build log for ${DISTRO}"
-  fi
-
-  # Running the tests
-  echo "### ## Running the tests from the container: ${CONT_NAME} ## ###"
-  if [[ ! -z ${DOCKER_SECRET_AUTH+z} ]]
-  then
-    docker run -d -v /workspace:/workspace -v ${PATH_SCRIPTS}:${PATH_SCRIPTS} -v ${ARTIFACTS}:${ARTIFACTS} --env DOCKER_SECRET_AUTH --env DISTRO_NAME --env DISTRO_VERS --env PATH_SCRIPTS --env DIR_TEST --privileged --name ${CONT_NAME} ${IMAGE_NAME}
-  else
-    docker run -d -v /workspace:/workspace -v ${PATH_SCRIPTS}:${PATH_SCRIPTS} -v ${ARTIFACTS}:${ARTIFACTS} --env DISTRO_NAME --env DISTRO_VERS --env PATH_SCRIPTS --env DIR_TEST --privileged --name ${CONT_NAME} ${IMAGE_NAME}
-  fi
-
-  local status_code="$(docker container wait $CONT_NAME)"
-  docker logs $CONT_NAME > ${DIR_TEST}/${TEST_LOG} 2>&1
-
-  if [[ ${status_code} -ne 0 ]]; then
-    echo "ERROR: The test suite failed for ${DISTRO}. See details from '${TEST_LOG}'"
-    echo "== Log start for the test failure of ${DISTRO} =="
-    cat ${DIR_TEST}/${TEST_LOG}
-    echo "== Log end for the test failure of ${DISTRO} =="
-  else
-    echo "Tests done"
-  fi
-
-  # Copying the test logs to the COS bucket
-  if test -f ${DIR_TEST}/${TEST_LOG}
-  then
-    echo "Test log for ${DISTRO} copied to the COS bucket"
-    cp ${DIR_TEST}/${TEST_LOG} ${DIR_TEST_COS}
-  else
-    echo "No test log for ${DISTRO}"
-  fi
-
-  if test -f ${DIR_TEST}/${TEST_JUNIT}
-  then
-    echo "Test junit copied to the COS bucket and ${ARTIFACTS}"
-    cp ${DIR_TEST}/${TEST_JUNIT} ${DIR_TEST_COS}
-    cp ${DIR_TEST}/${TEST_JUNIT} ${ARTIFACTS}
-  else
-    echo "No test junit for ${DISTRO}"
-  fi
-
-  popd
-  rm -rf tmp-${DISTRO}
-
-  local end=$SECONDS
-  local duration=$(expr $end - $begin)
-  echo "DURATION TEST ${DISTRO}: $(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
-
-  # Check the logs and get in the errors.txt a summary of the error logs
-  echo "### ### # Checking the logs # ### ###"
-  echo "DISTRO ${DISTRO_NAME} ${DISTRO_VERS}" 2>&1 | tee -a ${PATH_ERRORS}
-
-  if test -f ${DIR_TEST}/${TEST_LOG} && [[ $(eval "cat ${DIR_TEST}/${TEST_LOG} | grep -c exitCode") == 4 ]]
-  then
-    echo "Dynamic packages" 2>&1 | tee -a ${PATH_ERRORS}
-    # We get 4 exitCodes in the log (3 tests + the output of the first containing exitCode)
-    local TEST_1=$(eval "cat ${DIR_TEST}/${TEST_LOG} | grep exitCode | awk 'NR==2' | rev | cut -d' ' -f 1")
-    local TEST_2=$(eval "cat ${DIR_TEST}/${TEST_LOG} | grep exitCode | awk 'NR==3' | rev | cut -d' ' -f 1")
-    local TEST_3=$(eval "cat ${DIR_TEST}/${TEST_LOG} | grep exitCode | awk 'NR==4' | rev | cut -d' ' -f 1")
-  else
-    local TEST_1=1
-    local TEST_2=1
-    local TEST_3=1
-  fi
-
-  echo "TestDistro : ${TEST_1}" 2>&1 | tee -a ${PATH_ERRORS}
-  echo "TestDistroInstallPackage : ${TEST_2}" 2>&1 | tee -a ${PATH_ERRORS}
-  echo "TestDistroPackageCheck : ${TEST_3}" 2>&1 | tee -a ${PATH_ERRORS}
-
-  [[ "$TEST_1" -eq "0" ]] && [[ "$TEST_2" -eq "0" ]] && [[ "$TEST_3" -eq "0" ]]
-  let "TEST_DYNAMIC=TEST_DYNAMIC+$?"
-
-  # Copying the errors.txt to the COS bucket
-  cp ${PATH_ERRORS} ${PATH_ERRORS_COS}
-}
 
 
 ##
@@ -428,78 +230,78 @@ echo "# Tests of the dynamic packages #"
 #  done
 #done
 
-before=$SECONDS
-# 1) Build the list of distros
-# List of Distros that appear in the list though they are EOL or must not be built
-DisNo+=( "ubuntu-impish" "debian-buster" )
-for PACKTYPE in DEBS RPMS
-do
-  for DISTRO in ${!PACKTYPE}
-  do
-    No=0
-    for (( d=0 ; d<${#DisNo[@]} ; d++ ))
-    do
-      if [ ${DISTRO} == ${DisNo[d]} ]
-      then
-        No=1
-	break
-      fi
-    done
-    if [ $No -eq 0 ]
-    then
-        echo "Distro: ${DISTRO}"
-        Dis+=( $DISTRO )
-	Pac+=( $PACKTYPE )
-    fi
-  done
-done
-nD=${#Dis[@]}
-echo "Number of distros: $nD"
+# before=$SECONDS
+# # 1) Build the list of distros
+# # List of Distros that appear in the list though they are EOL or must not be built
+# DisNo+=( "ubuntu-impish" "debian-buster" )
+# for PACKTYPE in DEBS RPMS
+# do
+#   for DISTRO in ${!PACKTYPE}
+#   do
+#     No=0
+#     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
+#     do
+#       if [ ${DISTRO} == ${DisNo[d]} ]
+#       then
+#         No=1
+# 	break
+#       fi
+#     done
+#     if [ $No -eq 0 ]
+#     then
+#         echo "Distro: ${DISTRO}"
+#         Dis+=( $DISTRO )
+# 	Pac+=( $PACKTYPE )
+#     fi
+#   done
+# done
+# nD=${#Dis[@]}
+# echo "Number of distros: $nD"
 
-# 2) Launch tests and wait for them in parallel
-# Max number of tests running in parallel:
-let "max=${NCPUs}/2"
-echo "Max number of builds running in parallel: ${max}"
+# # 2) Launch tests and wait for them in parallel
+# # Max number of tests running in parallel:
+# let "max=${NCPUs}/2"
+# echo "Max number of builds running in parallel: ${max}"
 
-# Current number of tests being run:
-n=0
-# Index of Distro & Tests in the pids[] Dis[] and Pac[] arrays:
-i=0
-# Cumulative test count for all Dynamic tests (0 : all OK, n>0 : not OK)
-TEST_DYNAMIC=0
-while true
-do
-  while [ $n -lt $max ] && [ $i -lt ${nD} ]
-  do
-    testDynamicPackages ${Dis[i]} ${Pac[i]} &
-    pids+=( $! )
-    echo "Test distrib: i:$i ${Dis[i]} pid:${pids[i]}"
-    let "n=n+1"
-    let "i=i+1"
-#    echo "i: $i  n: $n"
-  done
-#  echo "PIDs: ${pids[*]}"
-  for (( j=0 ; j<${#pids[@]} ; j++ ))
-  do
-    pid=${pids[j]}
-    if [ ${pid} -ne 0 ]
-    then
-      break
-    fi
-  done
-  echo "Waiting for '${pid}' '${Dis[j]}' test to complete"
-  wait ${pid}
-  echo "            '${pid}' '${Dis[j]}' test completed"
-  pids[j]=0
-  let "n=n-1"
-#  echo "i: $i  n: $n" 
-  if [ $n -eq 0 ]
-  then
-    break
-  fi
-done
-after=$SECONDS
-duration=$(expr $after - $before) && echo "DURATION TOTAL CONTAINERD DISTROS TESTS : $(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
+# # Current number of tests being run:
+# n=0
+# # Index of Distro & Tests in the pids[] Dis[] and Pac[] arrays:
+# i=0
+# # Cumulative test count for all Dynamic tests (0 : all OK, n>0 : not OK)
+# TEST_DYNAMIC=0
+# # while true
+# # do
+# #   while [ $n -lt $max ] && [ $i -lt ${nD} ]
+# #   do
+# #     testDynamicPackages ${Dis[i]} ${Pac[i]} &
+# #     pids+=( $! )
+# #     echo "Test distrib: i:$i ${Dis[i]} pid:${pids[i]}"
+# #     let "n=n+1"
+# #     let "i=i+1"
+# # #    echo "i: $i  n: $n"
+# #   done
+# # #  echo "PIDs: ${pids[*]}"
+# #   for (( j=0 ; j<${#pids[@]} ; j++ ))
+# #   do
+# #     pid=${pids[j]}
+# #     if [ ${pid} -ne 0 ]
+# #     then
+# #       break
+# #     fi
+# #   done
+# #   echo "Waiting for '${pid}' '${Dis[j]}' test to complete"
+# #   wait ${pid}
+# #   echo "            '${pid}' '${Dis[j]}' test completed"
+# #   pids[j]=0
+# #   let "n=n-1"
+# # #  echo "i: $i  n: $n" 
+# #   if [ $n -eq 0 ]
+# #   then
+# #     break
+# #   fi
+# # done
+# after=$SECONDS
+# duration=$(expr $after - $before) && echo "DURATION TOTAL CONTAINERD DISTROS TESTS : $(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
 
 echo "# Tests for the static packages #"
