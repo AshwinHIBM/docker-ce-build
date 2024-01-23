@@ -136,30 +136,30 @@ patchGoVersion /workspace/docker-ce-packaging/rpm
 before=$SECONDS
 # 1) Build the list of distros
 # List of Distros that appear in the list though they are EOL or must not be built
-DisNo+=( "ubuntu-impish" "debian-buster" )
-for PACKTYPE in DEBS RPMS
-do
-  for DISTRO in ${!PACKTYPE}
-  do
-    No=0
-    for (( d=0 ; d<${#DisNo[@]} ; d++ ))
-    do
-      if [ ${DISTRO} == ${DisNo[d]} ]
-      then
-        No=1
-        break
-      fi
-    done
-    if [ $No -eq 0 ]
-    then
-      echo "Distro / Packtype: ${DISTRO} / ${PACKTYPE}"
-      Dis+=( $DISTRO )
-      Pac+=( $PACKTYPE )
-    fi
-  done
-done
-nD=${#Dis[@]}
-echo "Number of distros: $nD"
+# DisNo+=( "ubuntu-impish" "debian-buster" )
+# for PACKTYPE in DEBS RPMS
+# do
+#   for DISTRO in ${!PACKTYPE}
+#   do
+#     No=0
+#     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
+#     do
+#       if [ ${DISTRO} == ${DisNo[d]} ]
+#       then
+#         No=1
+#         break
+#       fi
+#     done
+#     if [ $No -eq 0 ]
+#     then
+#       echo "Distro / Packtype: ${DISTRO} / ${PACKTYPE}"
+#       Dis+=( $DISTRO )
+#       Pac+=( $PACKTYPE )
+#     fi
+#   done
+# done
+# nD=${#Dis[@]}
+# echo "Number of distros: $nD"
 
 # 2) Launch builds and wait for them in parallel
 # Max number of builds running in parallel:
@@ -167,40 +167,40 @@ echo "Number of distros: $nD"
 let "max=NCPUs/2"
 echo "Max number of builds running in parallel: ${max}"
 # Current number of builds being run:
-n=0
-# Index of Distro & Build in the pids[] Dis[] and Pac[] arrays:
-i=0
-while true
-do
-  while [ $n -lt $max ] && [ $i -lt ${nD} ]
-  do
-    buildDocker ${Dis[i]} ${Pac[i]} &
-    pids+=( $! )
-    echo "Build distrib: i:$i ${Dis[i]} pid:${pids[i]}"
-    let "n=n+1"
-    let "i=i+1"
-#    echo "i: $i  n: $n"
-  done
-#  echo "PIDs: ${pids[*]}"
-  for (( j=0 ; j<${#pids[@]} ; j++ ))
-  do
-    pid=${pids[j]}
-    if [ ${pid} -ne 0 ]
-    then
-      break
-    fi
-  done
-  echo "Waiting for '${pid}' '${Dis[j]}' build to complete"
-  wait ${pid}
-  echo "            '${pid}' '${Dis[j]}' build completed"
-  pids[j]=0
-  let "n=n-1"
-#  echo "i: $i  n: $n" 
-  if [ $n -eq 0 ]
-  then
-    break
-  fi
-done
+# n=0
+# # Index of Distro & Build in the pids[] Dis[] and Pac[] arrays:
+# i=0
+# while true
+# do
+#   while [ $n -lt $max ] && [ $i -lt ${nD} ]
+#   do
+#     buildDocker ${Dis[i]} ${Pac[i]} &
+#     pids+=( $! )
+#     echo "Build distrib: i:$i ${Dis[i]} pid:${pids[i]}"
+#     let "n=n+1"
+#     let "i=i+1"
+# #    echo "i: $i  n: $n"
+#   done
+# #  echo "PIDs: ${pids[*]}"
+#   for (( j=0 ; j<${#pids[@]} ; j++ ))
+#   do
+#     pid=${pids[j]}
+#     if [ ${pid} -ne 0 ]
+#     then
+#       break
+#     fi
+#   done
+#   echo "Waiting for '${pid}' '${Dis[j]}' build to complete"
+#   wait ${pid}
+#   echo "            '${pid}' '${Dis[j]}' build completed"
+#   pids[j]=0
+#   let "n=n-1"
+# #  echo "i: $i  n: $n" 
+#   if [ $n -eq 0 ]
+#   then
+#     break
+#   fi
+# done
 after=$SECONDS
 duration=$(expr $after - $before) && echo "DURATION TOTAL DOCKER : $(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
@@ -245,7 +245,7 @@ docker run -d \
            ${DOCKER_SECRET_AUTH_IN_ENV} \
            --privileged \
            --name ${CONT_NAME} \
-           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build \
+           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build:0.7-ppc64le \
            ${PATH_SCRIPTS}/build-static.sh
 
 status_code="$(docker container wait ${CONT_NAME})"
