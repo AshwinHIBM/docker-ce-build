@@ -234,7 +234,7 @@ echo "docker run -d \
            ${DOCKER_SECRET_AUTH_IN_ENV} \
            --privileged \
            --name ${CONT_NAME} \
-           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build \
+           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build@${DIND_QUAY_STATIC_HASH} \
            ${PATH_SCRIPTS}/build-static.sh"
            
 docker run -d \
@@ -245,7 +245,7 @@ docker run -d \
            ${DOCKER_SECRET_AUTH_IN_ENV} \
            --privileged \
            --name ${CONT_NAME} \
-           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build \
+           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build@${DIND_QUAY_STATIC_HASH} \
            ${PATH_SCRIPTS}/build-static.sh
 
 status_code="$(docker container wait ${CONT_NAME})"
