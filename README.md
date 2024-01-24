@@ -23,6 +23,7 @@ This postsubmit prow job is triggered by the editing of the [env.list](https://g
 - CONTAINERD_TAG : latest version of containerd
 - CONTAINERD_PACKAGING_HASH : commit associated to the latest version of containerd
 - RUNC_VERS : runc version used to build the static packages
+- STATIC_HASH: The image hash of the Docker-in-Docker image that will be used as the base image to build static binaries. It can be obtained from https://quay.io/repository/powercloud/docker-ce-build
 
 This prow job builds the dynamic docker packages and then pushes them to our internal COS bucket, before creating the file 'env/date.list' which contains the current date (timestamp). We use the date in the directory where we store the docker packages in the COS bucket, so that we don't confuse the different builds.
 
