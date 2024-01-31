@@ -45,7 +45,8 @@ sed -i 's/Centos="latest"/Centos="centos7"/g' ${PATH_DOCKERTEST}/dockertest/vers
 # Get the docker-ce packages
 mkdir /workspace/docker-ce-${DOCKER_TAG}_${DATE}
 cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/build-docker-${DOCKER_TAG}_${DATE}/docker-ce-${DOCKER_TAG}/* /workspace/docker-ce-${DOCKER_TAG}_${DATE}
-
+mkdir /workspace/containerd-${CONTAINERD_TAG}_${DATE}
+cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/build-docker-v25.0.0_220124-1831/containerd-v1.6.27/* /workspace/containerd-${CONTAINERD_TAG}_${DATE}
 # Get the containerd packages if CONTAINERD_BUILD=0
 if [[ ${CONTAINERD_BUILD} = "0" ]]
 then

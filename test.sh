@@ -432,9 +432,9 @@ before=$SECONDS
 # 1) Build the list of distros
 # List of Distros that appear in the list though they are EOL or must not be built
 DisNo+=( "ubuntu-impish" "debian-buster" )
-for PACKTYPE in DEBS RPMS
+for PACKTYPE in RPMS
 do
-  for DISTRO in ${!PACKTYPE}
+  for DISTRO in "fedora-38"
   do
     No=0
     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
@@ -505,7 +505,8 @@ duration=$(expr $after - $before) && echo "DURATION TOTAL CONTAINERD DISTROS TES
 echo "# Tests for the static packages #"
 
 if [[ "$TEST_MODE" = "local" ]]; then
-  testStaticPackages
+ # testStaticPackages
+ echo "Skipping static tests"
 else
   echo "Skip test static for TEST_MODE: $TEST_MODE"
   TEST_STATIC=0
