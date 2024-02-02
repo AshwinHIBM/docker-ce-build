@@ -147,7 +147,7 @@ then
     export RUNC_REF=${CONTAINERD_RUNC_TAG}
   fi
 
-  make REF=${CONTAINERD_HASH} checkout
+  make REF=${CONTAINERD_TAG} checkout
 fi
 
 before=$SECONDS
