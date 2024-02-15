@@ -1,7 +1,9 @@
 #!/bin/bash
 set -u
 
-echo "Prow Job to run CI tests on the Docker packages"
+begin=$SECONDS
+
+echo "Prow Job to run integration tests on the Docker packages"
 
 ${PWD}/dockerctl.sh start
 
@@ -14,5 +16,22 @@ chmod ug+x ${PATH_CI}/get-env-ci.sh && ${PATH_CI}/get-env-ci.sh
 echo "*** Build dev image ***"
 chmod ug+x ${PATH_CI}/build-dev-image.sh && ${PATH_CI}/build-dev-image.sh
 
+exit_code_build=$?
+echo "Exit code build : ${exit_code_build}"
+
+if [[ $? != 0 ]]; then
+    echo "Building dev image failed."
+    exit 1
+fi
+
 echo "*** Run integration tests ***"
 chmod ug+x ${PATH_CI}/integration-tests.sh && ${PATH_CI}/integration-tests.sh
+
+if [[ $? != 0 ]]; then
+    echo "Integration tests failed to run."
+    exit 1
+fi
+
+duration=$(( $SECONDS - $begin ))
+echo "DURATION INTEGRATION TEST $(( $duration / 60 )) minutes and $(( $duration % 60 )) seconds elapsed." 
+exit 0
