@@ -35,6 +35,7 @@ source date.list
 export DATE
 
 # Build containerd
+if [[ ${CONTAINERD_BUILD} == 1 ]]; then 
 echo "*** Build containerd packages ***"
 ${PATH_SCRIPTS}/build-containerd.sh
 exit_code_build=$?
