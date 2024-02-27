@@ -8,6 +8,12 @@ PATH_CI="${PWD}/upstream-master-ci"
 export PATH_CI
 echo "Prow Job to run CI tests on the Docker packages"
 
+if [[ -z ${ARTIFACTS} ]]; then
+    ARTIFACTS=/logs/artifacts
+    echo "Setting ARTIFACTS to ${ARTIFACTS}"
+    mkdir -p ${ARTIFACTS}
+fi
+
 # Go to the workdir
 echo "* Starting dockerd and waiting for it *"
 ${PWD}/dockerctl.sh start
