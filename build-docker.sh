@@ -137,9 +137,9 @@ before=$SECONDS
 # 1) Build the list of distros
 # List of Distros that appear in the list though they are EOL or must not be built
 DisNo+=( "ubuntu-impish" "debian-buster" )
-for PACKTYPE in DEBS RPMS
+for PACKTYPE in RPMS
 do
-  for DISTRO in ${!PACKTYPE}
+  for DISTRO in "fedora-40"
   do
     No=0
     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
@@ -205,90 +205,91 @@ after=$SECONDS
 duration=$(expr $after - $before) && echo "DURATION TOTAL DOCKER : $(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
 cd /workspace
-echo "= Building static binaries ="
+sleep 100000
+# echo "= Building static binaries ="
 
-before_build=$SECONDS
+# before_build=$SECONDS
 
-cd /workspace/docker-ce-packaging/static
+# cd /workspace/docker-ce-packaging/static
 
-CONT_NAME=docker-build-static
-# https://quay.io/repository/powercloud/docker-ce-build?tab=tags
-QUAYIO_REPOSITORY="powercloud"
-# Test ! Test a new DockerInDocker image before pushing it to Raji's Production Cluster
-# https://quay.io/repository/trex58i/docker-ce-build?tab=tags
-#QUAYIO_REPOSITORY="trex58i"
-if [[ ! -z ${DOCKER_SECRET_AUTH+z} ]]
-then
-  DOCKER_SECRET_AUTH_IN_ENV="--env DOCKER_SECRET_AUTH"
-else
-  DOCKER_SECRET_AUTH_IN_ENV=""
-fi
-echo "More trace for debugging static build issue: get full command line for running:"
-echo "    docker run [options] -ti quay.io/powercloud/docker-ce-build /bin/bash"
-echo "on fyre:focal1 ."
-echo "docker run -d \
-           -v /workspace:/workspace \
-           -v ${PATH_SCRIPTS}:${PATH_SCRIPTS} \
-           -v ${ARTIFACTS}:${ARTIFACTS} \
-           --env PATH_SCRIPTS \
-           ${DOCKER_SECRET_AUTH_IN_ENV} \
-           --privileged \
-           --name ${CONT_NAME} \
-           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build@${DIND_IMG_STATIC_HASH} \
-           ${PATH_SCRIPTS}/build-static.sh"
+# CONT_NAME=docker-build-static
+# # https://quay.io/repository/powercloud/docker-ce-build?tab=tags
+# QUAYIO_REPOSITORY="powercloud"
+# # Test ! Test a new DockerInDocker image before pushing it to Raji's Production Cluster
+# # https://quay.io/repository/trex58i/docker-ce-build?tab=tags
+# #QUAYIO_REPOSITORY="trex58i"
+# if [[ ! -z ${DOCKER_SECRET_AUTH+z} ]]
+# then
+#   DOCKER_SECRET_AUTH_IN_ENV="--env DOCKER_SECRET_AUTH"
+# else
+#   DOCKER_SECRET_AUTH_IN_ENV=""
+# fi
+# echo "More trace for debugging static build issue: get full command line for running:"
+# echo "    docker run [options] -ti quay.io/powercloud/docker-ce-build /bin/bash"
+# echo "on fyre:focal1 ."
+# echo "docker run -d \
+#            -v /workspace:/workspace \
+#            -v ${PATH_SCRIPTS}:${PATH_SCRIPTS} \
+#            -v ${ARTIFACTS}:${ARTIFACTS} \
+#            --env PATH_SCRIPTS \
+#            ${DOCKER_SECRET_AUTH_IN_ENV} \
+#            --privileged \
+#            --name ${CONT_NAME} \
+#            quay.io/${QUAYIO_REPOSITORY}/docker-ce-build@${DIND_IMG_STATIC_HASH} \
+#            ${PATH_SCRIPTS}/build-static.sh"
            
-docker run -d \
-           -v /workspace:/workspace \
-           -v ${PATH_SCRIPTS}:${PATH_SCRIPTS} \
-           -v ${ARTIFACTS}:${ARTIFACTS} \
-           --env PATH_SCRIPTS \
-           ${DOCKER_SECRET_AUTH_IN_ENV} \
-           --privileged \
-           --name ${CONT_NAME} \
-           quay.io/${QUAYIO_REPOSITORY}/docker-ce-build@${DIND_IMG_STATIC_HASH} \
-           ${PATH_SCRIPTS}/build-static.sh
+# docker run -d \
+#            -v /workspace:/workspace \
+#            -v ${PATH_SCRIPTS}:${PATH_SCRIPTS} \
+#            -v ${ARTIFACTS}:${ARTIFACTS} \
+#            --env PATH_SCRIPTS \
+#            ${DOCKER_SECRET_AUTH_IN_ENV} \
+#            --privileged \
+#            --name ${CONT_NAME} \
+#            quay.io/${QUAYIO_REPOSITORY}/docker-ce-build@${DIND_IMG_STATIC_HASH} \
+#            ${PATH_SCRIPTS}/build-static.sh
 
-status_code="$(docker container wait ${CONT_NAME})"
-if [[ ${status_code} -ne 0 ]]; then
-  # Save static build logs
-  echo "==== Copying static log to ${DIR_LOGS_COS}/${STATIC_LOG} ===="
-  cp ${DIR_LOGS}/${STATIC_LOG} ${DIR_LOGS_COS}/${STATIC_LOG}
+# status_code="$(docker container wait ${CONT_NAME})"
+# if [[ ${status_code} -ne 0 ]]; then
+#   # Save static build logs
+#   echo "==== Copying static log to ${DIR_LOGS_COS}/${STATIC_LOG} ===="
+#   cp ${DIR_LOGS}/${STATIC_LOG} ${DIR_LOGS_COS}/${STATIC_LOG}
   
-  # Note: Messages from build-static.sh and build-docker.sh are not always echoed by "docker logs" in temporal order
-  echo "The static binaries build failed. See details from '${STATIC_LOG}'"
-  docker logs ${CONT_NAME}
-else
-  after_build=$SECONDS
-  duration_build=$(expr $after_build - $before_build)
-  echo "DURATION BUILD STATIC : $(($duration_build / 60)) minutes and $(($duration_build % 60)) seconds elapsed."
-  docker logs ${CONT_NAME}
+#   # Note: Messages from build-static.sh and build-docker.sh are not always echoed by "docker logs" in temporal order
+#   echo "The static binaries build failed. See details from '${STATIC_LOG}'"
+#   docker logs ${CONT_NAME}
+# else
+#   after_build=$SECONDS
+#   duration_build=$(expr $after_build - $before_build)
+#   echo "DURATION BUILD STATIC : $(($duration_build / 60)) minutes and $(($duration_build % 60)) seconds elapsed."
+#   docker logs ${CONT_NAME}
 
-  # Check if the static packages have been built
-  if test -f build/linux/tmp/docker-ppc64le.tgz
-  then
-    echo "Static binaries built"
+#   # Check if the static packages have been built
+#   if test -f build/linux/tmp/docker-ppc64le.tgz
+#   then
+#     echo "Static binaries built"
 
-    echo "== Copying static packages to ${DIR_DOCKER} =="
-    cp build/linux/tmp/*.tgz ${DIR_DOCKER}
+#     echo "== Copying static packages to ${DIR_DOCKER} =="
+#     cp build/linux/tmp/*.tgz ${DIR_DOCKER}
 
-    echo "=== Copying static packages to ${DIR_DOCKER_COS} ==="
-    cp build/linux/tmp/*.tgz ${DIR_DOCKER_COS}
+#     echo "=== Copying static packages to ${DIR_DOCKER_COS} ==="
+#     cp build/linux/tmp/*.tgz ${DIR_DOCKER_COS}
 
-    echo "==== Copying static log to ${DIR_LOGS_COS}/${STATIC_LOG} ===="
-    cp ${DIR_LOGS}/${STATIC_LOG} ${DIR_LOGS_COS}/${STATIC_LOG}
+#     echo "==== Copying static log to ${DIR_LOGS_COS}/${STATIC_LOG} ===="
+#     cp ${DIR_LOGS}/${STATIC_LOG} ${DIR_LOGS_COS}/${STATIC_LOG}
 
-    # Checking everything has been copied
-    ls -f ${DIR_DOCKER}/*.tgz && ls -f ${DIR_DOCKER_COS}/*.tgz && ls -f ${DIR_LOGS_COS}/${STATIC_LOG}
-    if [[ $? -eq 0 ]]
-    then
-      echo "The static binaries were copied."
-    else
-      echo "The static binaries were not copied."
-    fi
-  fi
-fi
+#     # Checking everything has been copied
+#     ls -f ${DIR_DOCKER}/*.tgz && ls -f ${DIR_DOCKER_COS}/*.tgz && ls -f ${DIR_LOGS_COS}/${STATIC_LOG}
+#     if [[ $? -eq 0 ]]
+#     then
+#       echo "The static binaries were copied."
+#     else
+#       echo "The static binaries were not copied."
+#     fi
+#   fi
+# fi
 
-cd /workspace
+# cd /workspace
 
 # Check if the docker-ce packages have been built
 ls ${DIR_DOCKER}/*
