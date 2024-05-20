@@ -41,15 +41,18 @@ cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/dockertest ${PATH_DOCKERT
 mkdir /workspace/docker-ce-${DOCKER_TAG}_${DATE}
 cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/build-docker-${DOCKER_TAG}_${DATE}/docker-ce-${DOCKER_TAG}/* /workspace/docker-ce-${DOCKER_TAG}_${DATE}
 
+mkdir /workspace/containerd-${CONTAINERD_TAG}_${DATE}
+cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/build-docker-v26.0.1_160424-0651/containerd-${CONTAINERD_TAG}/* /workspace/containerd-${CONTAINERD_TAG}_${DATE}
+
 # Get the containerd packages if CONTAINERD_BUILD=0
-if [[ ${CONTAINERD_BUILD} = "0" ]]
-then
-    echo "CONTAINERD_BUILD is set to 0, we copy the containerd packages from the COS bucket"
-    mkdir /workspace/containerd-${CONTAINERD_TAG}_${DATE}
-    cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/containerd-${CONTAINERD_TAG}/* /workspace/containerd-${CONTAINERD_TAG}_${DATE}
-else
-    echo "CONTAINERD_BUILD is set to 1"
-fi
+# if [[ ${CONTAINERD_BUILD} = "0" ]]
+# then
+#     echo "CONTAINERD_BUILD is set to 0, we copy the containerd packages from the COS bucket"
+#     mkdir /workspace/containerd-${CONTAINERD_TAG}_${DATE}
+#     cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/containerd-${CONTAINERD_TAG}/* /workspace/containerd-${CONTAINERD_TAG}_${DATE}
+# else
+#     echo "CONTAINERD_BUILD is set to 1"
+# fi
 
 # Check if we have the dockertest
 if ! test -d ${PATH_DOCKERTEST}/dockertest
