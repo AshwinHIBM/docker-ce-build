@@ -11,6 +11,7 @@ set -o allexport
 export PATH_CI="${PWD}/upstream-master-ci"
 # Get the env files
 echo "** Set up (env files) **"
+chmod ug+x ${PWD}/get-env.sh && ${PWD}/get-env.sh
 chmod ug+x ${PATH_CI}/get-env-ci.sh && ${PATH_CI}/get-env-ci.sh
 
 echo "*** Build dev image ***"
