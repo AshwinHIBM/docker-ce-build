@@ -1,7 +1,7 @@
 pushd moby
 mkdir tmp
 touch tmp/out.txt
-TEST_IGNORE_CGROUP_CHECK=true TESTDEBUG="true" make -o build test-integration 2>&1 | tee tmp/out.txt
+TEST_IGNORE_CGROUP_CHECK=true TEST_SKIP_INTEGRATION_CLI=true TESTDEBUG="true" make -o build test-integration 2>&1 | tee tmp/out.txt
 rc=$(grep "failure" tmp/out.txt | awk '{print $6;}')
 popd
 if [[ $rc == 0 ]]; then
