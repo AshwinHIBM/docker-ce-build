@@ -1,6 +1,6 @@
 set -o allexport
 # Clone the moby repository
-git clone https://github.com/moby/moby.git
+git clone https://github.com/AshwinHIBM/moby.git
 
 PATH_COS="/mnt"
 PATH_PASSWORD="/root/.s3fs_cos_secret"
