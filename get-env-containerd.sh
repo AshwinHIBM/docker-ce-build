@@ -43,7 +43,7 @@ cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/build-docker-${DOCKER_TAG
 
 mkdir /workspace/containerd-${CONTAINERD_TAG}_${DATE}
 cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/build-docker-v26.1.4_120624-1043/containerd-${CONTAINERD_TAG}/* /workspace/containerd-${CONTAINERD_TAG}_${DATE}
-
+cp -r /workspace/containerd-${CONTAINERD_TAG}_${DATE} /workspace/containerd-${CONTAINERD_TAG}
 # Get the containerd packages if CONTAINERD_BUILD=0
 # if [[ ${CONTAINERD_BUILD} = "0" ]]
 # then
