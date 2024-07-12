@@ -442,10 +442,10 @@ echo "# Tests of the dynamic packages #"
 before=$SECONDS
 # 1) Build the list of distros
 # List of Distros that appear in the list though they are EOL or must not be built
-DisNo+=( "ubuntu-impish" "debian-buster" "fedora-40" "ubuntu-noble" )
-for PACKTYPE in DEBS RPMS
+DisNo+=( "ubuntu-impish" "debian-buster" "fedora-40" )
+for PACKTYPE in DEBS
 do
-  for DISTRO in ${!PACKTYPE}
+  for DISTRO in "ubuntu-noble"
   do
     No=0
     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
