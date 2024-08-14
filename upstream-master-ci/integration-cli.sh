@@ -18,6 +18,10 @@ echo "Integration CLI test flags:"
 echo "TEST_DEBUG=${TEST_DEBUG}" > ${DIR_LOGS_COS}/${COMMIT}.log
 
 make -f docker.Makefile TEST_DEBUG="true" test-e2e-non-experimental 2>&1 | tee ${DIR_LOGS_COS}/${COMMIT}.log
+rc=$?
+echo "The exit code is ${rc}"
+popd
+exit ${rc}
 grep "failure" ${DIR_LOGS_COS}/${COMMIT}.log > /dev/null 2>&1
 if [[ $? == 1 ]]; then
   popd
