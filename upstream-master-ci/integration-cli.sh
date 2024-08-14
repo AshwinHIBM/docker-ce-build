@@ -16,7 +16,7 @@ sed -i "/insecure-registry/d" ./e2e/compose-env.yaml
 TEST_DEBUG="true"
 echo "Integration CLI test flags:"
 echo "TEST_DEBUG=${TEST_DEBUG}" > ${DIR_LOGS_COS}/${COMMIT}.log
-
+set -o pipefail
 make -f docker.Makefile TEST_DEBUG="true" test-e2e-non-experimental 2>&1 | tee ${DIR_LOGS_COS}/${COMMIT}.log
 rc=$?
 echo "The exit code is ${rc}"
