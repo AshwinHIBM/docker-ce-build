@@ -21,4 +21,5 @@ echo "Exit code integration CLI tests : ${exit_code_integration_cli}"
 
 duration=$(( $SECONDS - $begin ))
 echo "DURATION INTEGRATION CLI TEST $(( $duration / 60 )) minutes and $(( $duration % 60 )) seconds elapsed." 
+sleep 10000
 exit $exit_code_integration_cli
