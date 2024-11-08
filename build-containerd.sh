@@ -154,9 +154,9 @@ before=$SECONDS
 # 1) Build the list of distros
 # List of Distros that appear in the list though they are EOL or must not be built
 DisNo+=( "ubuntu-impish" "debian-buster" )
-for PACKTYPE in DEBS RPMS
+for PACKTYPE in DEBS
 do
-  for DISTRO in ${!PACKTYPE}
+  for DISTRO in "ubuntu-oracular"
   do
     No=0
     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
@@ -258,7 +258,7 @@ then
     mkdir containerd-packaging
     cd /workspace/containerd-packaging
     git init
-    git remote add origin https://github.com/docker/containerd-packaging.git
+    git remote add origin https://github.com/AshwinHIBM/containerd-packaging.git
     git fetch origin ${CONTAINERD_PACKAGING_HASH}
     git checkout FETCH_HEAD
     make REF=${CONTAINERD_TAG} checkout
