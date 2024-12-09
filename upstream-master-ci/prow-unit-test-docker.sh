@@ -7,8 +7,6 @@ begin=$SECONDS
 PATH_CI="${PWD}/upstream-master-ci"
 export PATH_CI
 echo "Prow Job to run CI tests on the Docker packages"
-echo "Skip unit tests"
-exit 0
 if [[ -z ${ARTIFACTS} ]]; then
     ARTIFACTS=/logs/artifacts
     echo "Setting ARTIFACTS to ${ARTIFACTS}"
