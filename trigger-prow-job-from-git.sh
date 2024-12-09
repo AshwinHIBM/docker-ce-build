@@ -12,7 +12,7 @@ set -eu
 display_usage() {
  echo "Usage: -r <TRACKING_REPO> -b <TRACKING_BRANCH> -s <SRC_FILE> -d <DEST_FILE>"
  echo "Example:"
- echo " trigger-prow-job-from-git.sh -r alunsin/docker-ce-build" \
+ echo " trigger-prow-job-from-git.sh -r ppc64le-cloud/docker-ce-build" \
      "-b prow-job-tracking -s $PWD/env/date.list -d job/postsubmit-build-docker"
  exit 2
 }

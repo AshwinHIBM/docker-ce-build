@@ -6,8 +6,6 @@ echo "${PATH_CI}"
 export PATH_CI
 
 echo "Prow Job to run CI tests on the Docker packages"
-echo "Skip Build Dev image"
-exit 0
 # Go to the workdir
 echo "* Starting dockerd and waiting for it *"
 ${PWD}/dockerctl.sh start
