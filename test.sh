@@ -143,6 +143,13 @@ BUILD_ARGS+=" --build-arg GO_VERSION=${GO_VERSION}"
     ##
     echo "Temporary fix: patching Dockerfile for using CentOS 9 stream and quay.io "
     sed -i 's/FROM ppc64le.*/FROM quay.io\/centos\/centos\:stream9/g' Dockerfile
+  elif [[ "${DISTRO_NAME}:${DISTRO_VERS}" == centos:10 ]]
+  then
+    ##
+    # Switch to quay.io for CentOS 10 stream
+    ##
+    echo "Temporary fix: patching Dockerfile for using CentOS 10 stream and quay.io "
+    sed -i 's/FROM ppc64le.*/FROM quay.io\/centos\/centos\:stream10/g' Dockerfile
   fi
 
   BUILD_ARGS+=" --build-arg DISTRO_NAME=${DISTRO_NAME} --build-arg DISTRO_VERS=${DISTRO_VERS}"

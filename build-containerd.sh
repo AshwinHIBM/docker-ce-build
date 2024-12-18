@@ -73,6 +73,11 @@ buildContainerd() {
     echo "Switching to CentOS 9 stream and using quay.io"
 
     TARGET="quay.io/centos/centos:stream9"
+    elif [[ "${DISTRO_NAME}:${DISTRO_VERS}" == centos:10 ]]
+    then
+     echo "Switching to CentOS 10 stream and using quay.io"
+     
+     TARGET="quay.io/centos/centos:stream10"
   fi
 
   local MAKE_OPTS="REF=${CONTAINERD_TAG}"
