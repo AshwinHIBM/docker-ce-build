@@ -213,7 +213,7 @@ cd /workspace/docker-ce-packaging/static
 
 CONT_NAME=docker-build-static
 # https://quay.io/repository/powercloud/docker-ce-build?tab=tags
-QUAYIO_REPOSITORY="powercloud"
+QUAYIO_REPOSITORY="ahendre3"
 # Test ! Test a new DockerInDocker image before pushing it to Raji's Production Cluster
 # https://quay.io/repository/trex58i/docker-ce-build?tab=tags
 #QUAYIO_REPOSITORY="trex58i"
