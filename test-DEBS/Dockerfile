@@ -69,7 +69,7 @@ RUN set -eux; \
         cp $(which tini) "/usr/local/bin/docker-init"; \
         chmod +x /usr/local/bin/test-launch.sh;
 
-ARG GO_VERSION=1.23.3
+ARG GO_VERSION=1.23.4
 
 RUN set -eux; \
 	url="https://dl.google.com/go/${GO_VERSION}";\
