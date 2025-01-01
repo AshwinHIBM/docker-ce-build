@@ -3,7 +3,7 @@
 ARG DISTRO_NAME
 ARG DISTRO_VERS
 
-FROM ppc64le/$DISTRO_NAME:$DISTRO_VERS
+FROM public.ecr.aws/docker/library/$DISTRO_NAME:$DISTRO_VERS
 
 ARG DISTRO_NAME
 ARG DISTRO_VERS
@@ -41,16 +41,16 @@ RUN set -eux; \
 	echo 'dockremap:165536:65536' >> /etc/subuid; \
 	echo 'dockremap:165536:65536' >> /etc/subgid
 
-# Commit pointing to the latest Docker-in-Docker script as of January, 2024.
+# Commit pointing to the latest Docker-in-Docker script as of April, 2025.
 # https://github.com/moby/moby/tree/master/hack/dind
-ARG DIND_COMMIT=65cfcc28ab37cb75e1560e4b4738719c07c6618e
-# Commit pointing to the latest stable Dockerd-entrypoint script as of January, 2024.
-# https://github.com/docker-library/docker/tree/master/25/dind
-ARG DOCKERD_COMMIT=b317cabfb873fef32ac8cad0cd58d6e6c32a63a4
+ARG DIND_COMMIT=8d9e3502aba39127e4d12196dae16d306f76993d
+# Commit pointing to the latest stable Dockerd-entrypoint script as of April, 2025.
+# https://github.com/docker-library/docker/tree/master/28/dind
+ARG DOCKERD_COMMIT=35c016d0c0f0be4dc523bc1108d7fa2681db8306
 
 RUN set -eux; \
         curl "https://raw.githubusercontent.com/moby/moby/${DIND_COMMIT}/hack/dind" -o /usr/local/bin/dind; \
-        curl "https://raw.githubusercontent.com/docker-library/docker/${DOCKERD_COMMIT}/27/dind/dockerd-entrypoint.sh" -o /usr/local/bin/dockerd-entrypoint.sh; \
+        curl "https://raw.githubusercontent.com/docker-library/docker/${DOCKERD_COMMIT}/28/dind/dockerd-entrypoint.sh" -o /usr/local/bin/dockerd-entrypoint.sh; \
         chmod +x /usr/local/bin/dind; \
         chmod +x /usr/local/bin/dockerd-entrypoint.sh; \
         git clone https://github.com/krallin/tini.git "/workspace/tini"; \
@@ -62,7 +62,7 @@ RUN set -eux; \
         popd; \
         chmod +x /usr/local/bin/test-launch.sh;
 
-ARG GO_VERSION=1.23.3
+ARG GO_VERSION=1.24.2
 
 RUN set -eux; \
     url="https://dl.google.com/go/${GO_VERSION}";\

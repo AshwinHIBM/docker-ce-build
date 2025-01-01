@@ -3,11 +3,11 @@
 # This is inspired from  https://github.com/alunsin/all_in_one_dind/blob/90d0d0df6de2ea4d0666f3e10adce28a5fffcc88/Dockerfile
 ##
 
-FROM debian:bookworm
+FROM public.ecr.aws/docker/library/debian:bookworm
 
-ENV CONTAINERD_VERSION=1.7.24-1
+ENV CONTAINERD_VERSION=1.7.26-1
 
-ENV DOCKER_VERSION=27.4.0-1
+ENV DOCKER_VERSION=28.0.4-1
 
 WORKDIR /workspace
 RUN mkdir -p /workspace
@@ -73,12 +73,12 @@ RUN set -eux; \
     echo 'dockremap:165536:65536' >> /etc/subgid
 
 # https://github.com/docker/docker/tree/master/hack/dind
-ENV DIND_COMMIT 65cfcc28ab37cb75e1560e4b4738719c07c6618e
-ENV DOCKERD_COMMIT b317cabfb873fef32ac8cad0cd58d6e6c32a63a4
+ENV DIND_COMMIT 8d9e3502aba39127e4d12196dae16d306f76993d
+ENV DOCKERD_COMMIT 35c016d0c0f0be4dc523bc1108d7fa2681db8306
 
 RUN set -eux; \
 curl https://raw.githubusercontent.com/moby/moby/${DIND_COMMIT}/hack/dind -o /usr/local/bin/dind; \
-curl https://raw.githubusercontent.com/docker-library/docker/${DOCKERD_COMMIT}/27/dind/dockerd-entrypoint.sh -o /usr/local/bin/dockerd-entrypoint.sh; \
+curl https://raw.githubusercontent.com/docker-library/docker/${DOCKERD_COMMIT}/28/dind/dockerd-entrypoint.sh -o /usr/local/bin/dockerd-entrypoint.sh; \
 chmod +x /usr/local/bin/dind; \
     chmod +x /usr/local/bin/dockerd-entrypoint.sh; \
 cp $(which tini) "/usr/local/bin/docker-init";
