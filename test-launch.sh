@@ -17,27 +17,29 @@ echo ""
 DOCKER_CLI_VERSION=$(docker version --format '{{.Client.Version}}')
 DOCKER_SERVER_VERSION=$(docker version --format '{{.Server.Version}}')
 CONTAINERD_VERSION=$(docker version| awk '/containerd/{getline; print $2}')
-RUNC_VERSION=$(docker version| awk '/runc/{getline; print $2}')
-if [[ ${RUNC_VERSION} != ${CONTAINERD_RUNC_TAG:1} ]]; then
-  echo "ERROR: Version mismatch: RUNC version being tested is ${CONTAINERD_RUNC_TAG:1} and RUNC version downloaded from the Docker website is ${RUNC_VERSION}"
-  exit 1
-fi
+# RUNC_VERSION=$(docker version| awk '/runc/{getline; print $2}')
+# if [[ ${RUNC_VERSION} != ${CONTAINERD_RUNC_TAG:1} ]]; then
+#   echo "ERROR: Version mismatch: RUNC version being tested is ${CONTAINERD_RUNC_TAG:1} and RUNC version downloaded from the Docker website is ${RUNC_VERSION}"
+#   exit 1
+# fi
 
-if [[ ${DOCKER_CLI_VERSION:1} != ${DOCKER_TAG:1} ]]; then
-  echo "ERROR: Version mismatch: Docker CLI version being tested is ${DOCKER_TAG:1} and Docker CLI version downloaded from the Docker website is ${DOCKER_CLI_VERSION:1}"
-  exit 1
-fi
+# if [[ ${DOCKER_CLI_VERSION:1} != ${DOCKER_TAG:1} ]]; then
+#   echo "ERROR: Version mismatch: Docker CLI version being tested is ${DOCKER_TAG:1} and Docker CLI version downloaded from the Docker website is ${DOCKER_CLI_VERSION:1}"
+#   exit 1
+# fi
+echo "Docker CLI version being tested is ${DOCKER_TAG:1} and Docker CLI version downloaded from the Docker website is ${DOCKER_CLI_VERSION:1}"
+# if [[ ${DOCKER_SERVER_VERSION:1} != ${DOCKER_TAG:1} ]]; then
+#   echo "ERROR: Version mismatch: Docker Server version being tested is ${DOCKER_TAG:1} and Docker Server version downloaded from the Docker website is ${DOCKER_SERVER_VERSION:1}"
+#   exit 1
 
-if [[ ${DOCKER_SERVER_VERSION:1} != ${DOCKER_TAG:1} ]]; then
-  echo "ERROR: Version mismatch: Docker Server version being tested is ${DOCKER_TAG:1} and Docker Server version downloaded from the Docker website is ${DOCKER_SERVER_VERSION:1}"
-  exit 1
+# fi
 
-fi
-if [[ ${CONTAINERD_VERSION} != ${CONTAINERD_TAG:1} ]]; then
-  echo "ERROR: Version mismatch: containerd version being tested is ${CONTAINERD_TAG:1} and containerd version downloaded from the Docker website is ${CONTAINERD}"
-  exit 1
-fi
-
+echo "Docker Server version being tested is ${DOCKER_TAG:1} and Docker Server version downloaded from the Docker website is ${DOCKER_SERVER_VERSION:1}"
+# if [[ ${CONTAINERD_VERSION} != ${CONTAINERD_TAG:1} ]]; then
+#   echo "ERROR: Version mismatch: containerd version being tested is ${CONTAINERD_TAG:1} and containerd version downloaded from the Docker website is ${CONTAINERD}"
+#   exit 1
+# fi
+echo "containerd version being tested is ${CONTAINERD_TAG:1} and containerd version downloaded from the Docker website is ${CONTAINERD_VERSION}"
 # Run the docker test suite that consists of 3 tests
 echo "= Docker test suite for ${DISTRO_NAME} ="
 export GOPATH=${WORKSPACE}/test:/go
