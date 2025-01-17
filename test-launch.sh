@@ -24,13 +24,7 @@ else
   if [[ -z ${CONTAINERD_RUNC_TAG} ]]; then
     if [[ ! -d containerd ]]; then
       echo "= Cloning containerd ="
-      mkdir containerd
-      pushd containerd
-        git init
-        git remote add origin https://github.com/containerd/containerd.git
-        git fetch origin ${CONTAINERD_TAG}
-        git checkout FETCH_HEAD 
-      popd
+      git clone --depth 1 --branch ${CONTAINERD_TAG} https://github.com/containerd/containerd.git
     fi
     CONTAINERD_RUNC_TAG=$(< /workspace/containerd/script/setup/runc-version)
   fi
