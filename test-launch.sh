@@ -18,6 +18,17 @@ DOCKER_CLI_VERSION=$(docker version --format '{{.Client.Version}}')
 DOCKER_SERVER_VERSION=$(docker version --format '{{.Server.Version}}')
 CONTAINERD_VERSION=$(docker version| awk '/containerd/{getline; print $2}')
 RUNC_VERSION=$(docker version| awk '/runc/{getline; print $2}')
+if [[ ${DISTRO_NAME} == "alpine" ]]; then
+  echo "Skip version checks for ${DISTRO_NAME}"
+else
+  if [[ -z ${CONTAINERD_RUNC_TAG} ]]; then
+    if [[ ! -d containerd ]]; then
+      echo "= Cloning containerd ="
+      git clone --depth 1 --branch ${CONTAINERD_TAG} https://github.com/containerd/containerd.git
+    fi
+    CONTAINERD_RUNC_TAG=$(< /workspace/containerd/script/setup/runc-version)
+  fi
+fi
 if [[ ${RUNC_VERSION} != ${CONTAINERD_RUNC_TAG:1} ]]; then
   echo "ERROR: Version mismatch: RUNC version being tested is ${CONTAINERD_RUNC_TAG:1} and RUNC version downloaded from the Docker website is ${RUNC_VERSION}"
   exit 1
