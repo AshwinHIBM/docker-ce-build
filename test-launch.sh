@@ -28,25 +28,24 @@ else
     fi
     CONTAINERD_RUNC_TAG=$(< /workspace/containerd/script/setup/runc-version)
   fi
-fi
-if [[ ${RUNC_VERSION} != ${CONTAINERD_RUNC_TAG:1} ]]; then
-  echo "ERROR: Version mismatch: RUNC version being tested is ${CONTAINERD_RUNC_TAG:1} and RUNC version downloaded from the Docker website is ${RUNC_VERSION}"
-  exit 1
-fi
+  if [[ ${RUNC_VERSION} != ${CONTAINERD_RUNC_TAG:1} ]]; then
+    echo "ERROR: Version mismatch: RUNC version being tested is ${CONTAINERD_RUNC_TAG:1} and RUNC version downloaded from the Docker website is ${RUNC_VERSION}"
+    exit 1
+  fi
 
-if [[ ${DOCKER_CLI_VERSION:1} != ${DOCKER_TAG:1} ]]; then
-  echo "ERROR: Version mismatch: Docker CLI version being tested is ${DOCKER_TAG:1} and Docker CLI version downloaded from the Docker website is ${DOCKER_CLI_VERSION:1}"
-  exit 1
-fi
+  if [[ ${DOCKER_CLI_VERSION:1} != ${DOCKER_TAG:1} ]]; then
+    echo "ERROR: Version mismatch: Docker CLI version being tested is ${DOCKER_TAG:1} and Docker CLI version downloaded from the Docker website is ${DOCKER_CLI_VERSION:1}"
+    exit 1
+  fi
 
-if [[ ${DOCKER_SERVER_VERSION:1} != ${DOCKER_TAG:1} ]]; then
-  echo "ERROR: Version mismatch: Docker Server version being tested is ${DOCKER_TAG:1} and Docker Server version downloaded from the Docker website is ${DOCKER_SERVER_VERSION:1}"
-  exit 1
-
-fi
-if [[ ${CONTAINERD_VERSION} != ${CONTAINERD_TAG:1} ]]; then
-  echo "ERROR: Version mismatch: containerd version being tested is ${CONTAINERD_TAG:1} and containerd version downloaded from the Docker website is ${CONTAINERD_VERSION}"
-  exit 1
+  if [[ ${DOCKER_SERVER_VERSION:1} != ${DOCKER_TAG:1} ]]; then
+    echo "ERROR: Version mismatch: Docker Server version being tested is ${DOCKER_TAG:1} and Docker Server version downloaded from the Docker website is ${DOCKER_SERVER_VERSION:1}"
+    exit 1
+  fi
+  if [[ ${CONTAINERD_VERSION} != ${CONTAINERD_TAG:1} ]]; then
+    echo "ERROR: Version mismatch: containerd version being tested is ${CONTAINERD_TAG:1} and containerd version downloaded from the Docker website is ${CONTAINERD_VERSION}"
+    exit 1
+  fi
 fi
 
 # Run the docker test suite that consists of 3 tests
