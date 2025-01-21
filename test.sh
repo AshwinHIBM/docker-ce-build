@@ -12,6 +12,10 @@ source env.list
 NCPUs=`grep processor /proc/cpuinfo | wc -l`
 echo "Nber of available CPUs: ${NCPUs}"
 
+# Get containerd repo if CONTAINERD_RUNC_TAG is unset
+echo "** Set up (env files) **"
+chmod ug+x ${PATH_SCRIPTS}/get-env-test.sh && ${PATH_SCRIPTS}/get-env-test.sh
+
 # Function to create the directory if it does not exist
 checkDirectory() {
   if ! test -d $1
