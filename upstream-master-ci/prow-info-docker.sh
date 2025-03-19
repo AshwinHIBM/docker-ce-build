@@ -25,7 +25,7 @@ ${PATH_CI}/info.sh
 
 if [[ $? == 0 ]]; then 
     chmod ug+x ./setup-pj-trigger.sh
-    ./setup-pj-trigger.sh -r ppc64le-cloud/docker-ce-build
+    ./setup-pj-trigger.sh -r ppc64le-cloud/docker-ce-build -s ${PATH_SCRIPTS}/env/date.list
 else
     if [[ $? == 1 ]]; then
         echo "Error checking the kernel configuration"
