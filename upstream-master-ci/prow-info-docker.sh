@@ -6,7 +6,7 @@ PATH_CI="${PWD}/upstream-master-ci"
 export PATH_CI
 DATE=`date +%d%m%y-%H%M`
 
-REPO_OWNER="ppc64le-cloud"
+REPO_OWNER="AshwinHIBM"
 REPO_NAME="docker-ce-build"
 PATH_SCRIPTS="/home/prow/go/src/github.com/${REPO_OWNER}/${REPO_NAME}"
 echo DATE=\"${DATE}\" 2>&1 | tee ${PATH_SCRIPTS}/env/date.list
