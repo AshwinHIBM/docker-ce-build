@@ -35,7 +35,7 @@ fi
 
 # Copy the dockertest repo to the local /workspace
 mkdir -p ${PATH_DOCKERTEST}
-cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/dockertest ${PATH_DOCKERTEST}/dockertest
+cp -r ${PATH_COS}/s3_${COS_BUCKET_PRIVATE}/prow-docker/dockertest-updated ${PATH_DOCKERTEST}/dockertest
 
 # Get the docker-ce packages
 mkdir /workspace/docker-ce-${DOCKER_TAG}_${DATE}
