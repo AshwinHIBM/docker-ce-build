@@ -23,7 +23,6 @@ RUN apt-get -y update && apt-get -y upgrade && DEBIAN_FRONTEND="noninteractive" 
     dbus-user-session \
     git \
     gnupg2 \
-    software-properties-common \
     lsb-release\
     make\
     gcc\
