@@ -390,7 +390,7 @@ DIR_CONTAINERD="/workspace/containerd-${CONTAINERD_TAG}_${DATE}"
 
 PATH_DOCKERFILE="${PATH_SCRIPTS}/test"
 
-DIR_COS_BUCKET="/mnt/s3_ppc64le-docker/prow-docker/build-docker-${DOCKER_TAG}_${DATE}"
+DIR_COS_BUCKET="/mnt/s3_ppc64le-docker/prow-docker/build-docker-v28.1.1_${DATE}"
 
 DIR_TEST_COS="${DIR_COS_BUCKET}/tests"
 checkDirectory ${DIR_TEST_COS}
