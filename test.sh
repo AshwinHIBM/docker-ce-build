@@ -8,6 +8,7 @@ set -u
 set -o allexport
 
 source env.list
+source "$(dirname "$0")/distro-vers-map.sh"
 
 NCPUs=`grep processor /proc/cpuinfo | wc -l`
 echo "Nber of available CPUs: ${NCPUs}"
@@ -52,6 +53,8 @@ testDynamicPackages() {
   echo "## Looking for ${DISTRO} ##"
   local DISTRO_NAME="$(cut -d'-' -f1 <<<"${DISTRO}")"
   local DISTRO_VERS="$(cut -d'-' -f2 <<<"${DISTRO}")"
+  local DISTRO_VERS_NAME
+  DISTRO_VERS_NAME="$(distro_vers_to_name "${DISTRO_VERS}")"
 
   # Get all environment variables
   local IMAGE_NAME="t_docker_${DISTRO_NAME}_${DISTRO_VERS}"
@@ -90,20 +93,20 @@ testDynamicPackages() {
 
     echo "### Copying the packages and the dockerfile for ${DISTRO} ###"
     # Copy the docker-ce packages
-    cp ${DIR_DOCKER}/bundles-ce-${DISTRO_NAME}-${DISTRO_VERS}-ppc64*.tar.gz .
+    cp ${DIR_DOCKER}/bundles-ce-${DISTRO_NAME}-${DISTRO_VERS_NAME}-ppc64*.tar.gz .
     # Copy the containerd packages (we have two different configurations depending on the package type)
     local CONTAINERD_TAG_2=$(echo ${CONTAINERD_TAG} | cut -d'v' -f2)
     if [[ ${PACKTYPE} == "DEBS" ]]
     then
       # For the debian packages, we don't want the dbgsym package
-      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}/ppc64*/containerd.io_${CONTAINERD_TAG_2}*_ppc64*.deb .
+      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/containerd.io_${CONTAINERD_TAG_2}*_ppc64*.deb .
     elif [[ ${PACKTYPE} == "RPMS" ]]
     then
-      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}/ppc64*/containerd.io-${CONTAINERD_TAG_2}*.ppc64*.rpm .
+      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}/containerd.io-${CONTAINERD_TAG_2}*.ppc64*.rpm .
     fi
 
     # Check if we have the docker-ce and containerd packages and the Dockerfile and the test-launch.sh
-    ls bundles-ce-${DISTRO_NAME}-${DISTRO_VERS}-ppc64le.tar.gz && ls containerd*ppc64*.* && ls Dockerfile && ls test-launch.sh
+    ls bundles-ce-${DISTRO_NAME}-${DISTRO_VERS_NAME}-ppc64le.tar.gz && ls containerd*ppc64*.* && ls Dockerfile && ls test-launch.sh
     if [[ $? -ne 0 ]]
     then
       # The docker-ce packages and/or the containerd packages and/or the Dockerfile is/are missing
@@ -144,7 +147,9 @@ BUILD_ARGS+=" --build-arg GO_VERSION=${GO_VERSION}"
     sed -i 's/FROM public.ecr.aws.*/FROM quay.io\/centos\/centos\:stream10/g' Dockerfile
   fi
  
-  BUILD_ARGS+=" --build-arg DISTRO_NAME=${DISTRO_NAME} --build-arg DISTRO_VERS=${DISTRO_VERS}"
+  DISTRO_VERS_ARG="$(distro_vers_to_name "${DISTRO_VERS}")"
+
+  BUILD_ARGS+=" --build-arg DISTRO_NAME=${DISTRO_NAME} --build-arg DISTRO_VERS=${DISTRO_VERS_ARG}"
 
   if [[ "$TEST_MODE" = "staging" || "$TEST_MODE" = "release"  ]]; then
     echo "Setup REPO_HOSTNAME=${REPO_HOSTNAME}"

@@ -50,25 +50,21 @@ set -o allexport
 source /workspace/${FILE_ENV}
 
 # Generate the list of distributions and populate docker-ce-packaging from git
-mkdir docker-ce-packaging
-pushd docker-ce-packaging
+mkdir packaging
+pushd packaging
 git init
-git remote add origin https://github.com/docker/docker-ce-packaging.git
-git fetch origin ${DOCKER_PACKAGING_HASH}
-git checkout FETCH_HEAD
-
-DOCKER_CLI_REF=${DOCKER_TAG}
-DOCKER_ENGINE_REF="docker-${DOCKER_TAG}"
-make DOCKER_CLI_REF=${DOCKER_CLI_REF} DOCKER_ENGINE_REF=${DOCKER_ENGINE_REF} checkout
+git remote add origin https://github.com/docker/packaging.git
+git fetch origin
+git checkout main
 popd
 
 
 if [[ ${DISABLE_DISTRO_DISCOVERY} != "1" ]]
 then
     echo "Discovering distribution list from git"
-    # Get the distributions list in the docker-ce-packaging repository
-    echo DEBS=\"`cd docker-ce-packaging/deb && ls -1d debian-* ubuntu-*`\" >> ${FILE_ENV}
-    echo RPMS=\"`cd docker-ce-packaging/rpm && ls -1d centos-* fedora-*`\" >> ${FILE_ENV}
+    # Get the distributions list in the packaging repository
+    sed -nE 's/^target "_distro-((debian|ubuntu)[^"]*)".*/\1/p' packaging/docker-bake.hcl | sed -E '/^(debian|ubuntu)/ s/^(debian|ubuntu)/\1-/' | paste -sd' ' - | sed 's/^/DEBS="/; s/$/"/' >> ${FILE_ENV}
+    sed -nE 's/^target "_distro-((fedora|centos)[^"]*)".*/\1/p' packaging/docker-bake.hcl | sed -E '/^(fedora|centos)/ s/^(fedora|centos)/\1-/' | paste -sd' ' - | sed 's/^/RPMS="/; s/$/"/' >> ${FILE_ENV}
     source /workspace/${FILE_ENV}
 else
     echo "Disable distribution discovery from git"

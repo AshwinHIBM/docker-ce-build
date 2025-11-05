@@ -5,6 +5,7 @@ set -u
 
 set -o allexport
 source env.list
+source "$(dirname "$0")/distro-vers-map.sh"
 
 NCPUs=`grep processor /proc/cpuinfo | wc -l`
 echo "Nber of available CPUs: ${NCPUs}"
@@ -47,35 +48,18 @@ buildContainerd() {
   local DISTRO=$1
   local DISTRO_NAME="$(cut -d'-' -f1 <<<"${DISTRO}")"
   local DISTRO_VERS="$(cut -d'-' -f2 <<<"${DISTRO}")"
+  local DISTRO_VERS_NAME
+  DISTRO_VERS_NAME="$(distro_vers_to_name "${DISTRO_VERS}")"
 
-  local TARGET="docker.io/library/${DISTRO_NAME}:${DISTRO_VERS}"
 
   # Create a directory for building in // the Distros
   mkdir /workspace/containerd-packaging-${DISTRO}
-  cp -r /workspace/containerd-packaging-ref/* /workspace/containerd-packaging-${DISTRO}
+  cp -r /workspace/packaging/* /workspace/containerd-packaging-${DISTRO}
   
-  if [[ "${DISTRO_NAME}:${DISTRO_VERS}" == centos:9 ]]; then
-    ##
-    # Switch to quay.io for CentOS 9 stream
-    # See https://github.com/docker/containerd-packaging/pull/283
-    ##
-    echo "Switching to CentOS 9 stream and using quay.io"
-    TARGET="quay.io/centos/centos:stream9"
-  elif [[ "${DISTRO_NAME}:${DISTRO_VERS}" == centos:10 ]]; then
-     echo "Switching to CentOS 10 stream and using quay.io"
-     TARGET="quay.io/centos/centos:stream10"
-  fi
-
-  local MAKE_OPTS="REF=${CONTAINERD_TAG}"
-  if [[ ! -z "${CONTAINERD_GO_VERSION}" ]]
-  then
-    MAKE_OPTS+=" GOLANG_VERSION=${CONTAINERD_GO_VERSION}"
-  fi
-
-  echo "Calling make ${MAKE_OPTS} ${TARGET}"
+  echo "Calling docker buildx bake ${CONTAINERD_TAG} ${DISTRO_NAME}${DISTRO_VERS}"
   cd /workspace/containerd-packaging-${DISTRO} && \
-    make ${MAKE_OPTS} ${TARGET} > ${DIR_LOGS}/build_containerd_${DISTRO}.log 2>&1
-
+    PKG_REF="${CONTAINERD_TAG}" LOCAL_PLATFORM="linux/ppc64le" docker buildx bake pkg-containerd-"${DISTRO_NAME}""${DISTRO_VERS}" --builder="container" \
+    >> "${DIR_LOGS}/build_containerd_${DISTRO}.log" 2>&1
   local RET=$?
   if [[ $RET -ne 0 ]]
 	then
@@ -84,24 +68,24 @@ buildContainerd() {
   fi
 
   # Check if the dynamic containerd package has been built
-  if test -d build/${DISTRO_NAME}/${DISTRO_VERS}
+  if test -d /workspace/containerd-packaging-${DISTRO}/bin
   then
     echo "Containerd for ${DISTRO} built"
 
     echo "== Copying packages to ${DIR_CONTAINERD} =="
     checkDirectory ${DIR_CONTAINERD}/${DISTRO_NAME}
-    cp -r build/${DISTRO_NAME}/${DISTRO_VERS} ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}
+    cp -r /workspace/containerd-packaging-${DISTRO_NAME}-${DISTRO_VERS}/bin/pkg/containerd/${DISTRO_NAME}${DISTRO_VERS}/linux_ppc64le/${DISTRO_NAME}/${DISTRO_VERS_NAME}/ppc64le/. ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}
 
     echo "=== Copying packages to ${DIR_CONTAINERD_COS} ==="
     checkDirectory ${DIR_CONTAINERD_COS}/${DISTRO_NAME}
-    cp -r build/${DISTRO_NAME}/${DISTRO_VERS} ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS}
+    cp -r ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/. ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS_NAME}
 
     echo "==== Copying log to ${DIR_LOGS_COS} ===="
     cp ${DIR_LOGS}/build_containerd_${DISTRO}.log ${DIR_LOGS_COS}/build_containerd_${DISTRO}.log
 
     # Checking everything has been copied
-    if [[ ! -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS} || \
-          ! -d ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS} ]]
+    if [[ ! -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME} || \
+          ! -d ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS_NAME} ]]
     then
       echo "ERROR: Containerd for ${DISTRO} was not copied."
     fi
@@ -123,22 +107,13 @@ buildContainerd() {
 
 if [[ ${CONTAINERD_BUILD} != "0" ]]
 then
-  echo "= Cloning containerd-packaging ="
-
-  mkdir containerd-packaging-ref
-  cd containerd-packaging-ref
-  git init
-  git remote add origin https://github.com/docker/containerd-packaging.git
-  git fetch origin ${CONTAINERD_PACKAGING_HASH}
-  git checkout FETCH_HEAD
-
+  cd packaging
 
   if [[ ! -z "${CONTAINERD_RUNC_TAG}" ]]
   then
     export RUNC_REF=${CONTAINERD_RUNC_TAG}
   fi
 
-  make REF=${CONTAINERD_TAG} checkout
 fi
 
 before=$SECONDS
@@ -179,6 +154,7 @@ then
   n=0
   # Index of Distro & Build in the pids[] Dis[] array:
   i=0
+  docker buildx create --name container --driver=docker-container default
   while true
   do
     while [ $n -lt $max ] && [ $i -lt ${nD} ]
@@ -222,8 +198,9 @@ else
 
     DISTRO_NAME="$(cut -d'-' -f1 <<<"${DISTRO}")"
     DISTRO_VERS="$(cut -d'-' -f2 <<<"${DISTRO}")"
+    DISTRO_VERS_NAME="$(distro_vers_to_name "${DISTRO_VERS}")"
 
-    if test -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}
+    if test -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}
     then
       echo "${DISTRO} already built"
     else
