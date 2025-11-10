@@ -22,7 +22,7 @@ if [[ ${DISTRO_NAME} == "alpine" ]]; then
   echo "Skip version checks for ${DISTRO_NAME}"
 else
   CONTAINERD_RUNC_TAG=${CONTAINERD_RUNC_TAG}
-
+  echo "runc version is ${CONTAINERD_RUNC_TAG}"
   if [[ ${RUNC_VERSION} != ${CONTAINERD_RUNC_TAG:1} ]]; then
     echo "ERROR: Version mismatch: RUNC version being tested is ${CONTAINERD_RUNC_TAG:1} and RUNC version downloaded from the Docker website is ${RUNC_VERSION}"
     exit 1
