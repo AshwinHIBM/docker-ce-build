@@ -25,6 +25,7 @@ RUN apt-get -y update && apt-get -y upgrade && DEBIAN_FRONTEND="noninteractive" 
     gnupg2 \
     lsb-release\
     make\
+    nftables \
     gcc\
     libc-dev\
     procps\
