@@ -66,13 +66,15 @@ source /workspace/${FILE_ENV}
 mkdir docker-ce-packaging
 pushd docker-ce-packaging
 git init
-git remote add origin https://github.com/docker/docker-ce-packaging.git
+git remote add origin https://github.com/AshwinHIBM/docker-ce-packaging.git
 git fetch origin ${DOCKER_PACKAGING_HASH}
 git checkout FETCH_HEAD
 
 switchModelRepository
 
-make REF=${DOCKER_TAG} checkout
+DOCKER_CLI_REF=${DOCKER_TAG}
+DOCKER_ENGINE_REF="docker-${DOCKER_TAG}"
+make DOCKER_CLI_REF=${DOCKER_CLI_REF} DOCKER_ENGINE_REF=${DOCKER_ENGINE_REF} checkout
 popd
 
 
