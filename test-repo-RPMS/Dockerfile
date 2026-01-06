@@ -2,7 +2,7 @@
 
 ARG DISTRO_NAME
 ARG DISTRO_VERS
-ARG REPO_HOSTNAME=download-stage.docker.com
+ARG REPO_HOSTNAME=download.docker.com
 
 FROM public.ecr.aws/docker/library/$DISTRO_NAME:$DISTRO_VERS
 
