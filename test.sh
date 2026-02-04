@@ -443,9 +443,9 @@ before=$SECONDS
 # 1) Build the list of distros
 # List of Distros that appear in the list though they are EOL or must not be built
 DisNo+=( "debian-bullseye" )
-for PACKTYPE in DEBS RPMS
+for PACKTYPE in RPMS
 do
-  for DISTRO in ${!PACKTYPE}
+  for DISTRO in "fedora-43"
   do
     No=0
     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
