@@ -2,7 +2,6 @@
 
 SSH_KEY=""
 NAME=""
-NETWORK=""
 OUTPUT="."
 RUNC_FLAVOR="runc"
 TEST_RUNTIME="io.containerd.runc.v2"
@@ -26,7 +25,10 @@ EOF
 }
 
 function delete_vm() {
-  if [ -z $1 ]; then echo "Nothing to delete. delete_vm requires the vm ID as an argument."; return; fi
+  if [[ -z "${1:-}" ]]; then
+    echo "Nothing to delete. delete_vm requires the vm ID as an argument."
+    return
+  fi
 
   # Ensure we are yet connected
   echo "" | ibmcloud login
@@ -35,7 +37,10 @@ function delete_vm() {
 }
 
 function delete_network() {
-  if [ -z $1 ]; then echo "Nothing to delete. delete_network requires the network ID as an argument."; return; fi
+  if [[ -z "${1:-}" ]]; then
+    echo "Nothing to delete. delete_network requires the network ID as an argument."
+    return
+  fi
 
   # Ensure we are yet connected
   echo "" | ibmcloud login
@@ -60,6 +65,22 @@ function delete_network() {
   return $NET_DEL_EXIT
 }
 
+function cleanup() {
+  set +e
+  local VM_ID=$1
+  local NETWORK_ID=$2
+
+  if [[ -n "${VM_ID:-}" ]]; then
+    echo "Cleaning up VM $VM_ID"
+    delete_vm "$VM_ID"
+    sleep 120
+  fi
+  if [[ -n "${NETWORK_ID:-}" ]]; then
+    echo "Cleaning up network $NETWORK_ID"
+    delete_network "$NETWORK_ID"
+  fi
+}
+
 # Get options
 while [[ $# != 0 ]]; do
 	case "$1" in
@@ -75,8 +96,17 @@ while [[ $# != 0 ]]; do
 done
 
 # Ensure key, name and network are fulfilled
-if [ -z $SSH_KEY ]; then echo "FAIL: Key not fulfilled."; usage; exit 1; fi
-if [ -z $NAME ]; then echo "FAIL: Name not fulfilled."; usage; exit 1; fi
+if [[ -z "$SSH_KEY" ]]; then 
+  echo "FAIL: Key not fulfilled."
+  usage
+  exit 1
+fi
+
+if [[ -z "$NAME" ]]; then
+  echo "FAIL: Name not fulfilled."
+  usage
+  exit 1
+fi
 
 # Create a machine
 # Sometime fail, but the machine is correctly instanciated
@@ -87,7 +117,10 @@ NAME="$NAME-$RAND_VAL"
 NETNAME="prow-net-$RAND_VAL"
 NETWORK=$(ibmcloud pi subnet create $NETNAME --net-type public --dns-servers "9.9.9.9" | grep -m 1 ID | awk '{print $2}') || true
 
-if [ -z "$NETWORK" ]; then echo "FAIL: fail to configure network."; exit 1; fi
+if [[ -z "$NETWORK" ]]; then
+  echo "FAIL: fail to configure network."
+  exit 1
+fi
 
 ID=$(ibmcloud pi instance create $NAME --image ubuntu_2204_tier1 --key-name $SSH_KEY --memory 8 --processor-type shared --processors '0.5' --subnets $NETWORK --storage-tier tier1 | grep -m 1 ID | awk '{print $2}') || true
 
@@ -95,7 +128,12 @@ ID=$(ibmcloud pi instance create $NAME --image ubuntu_2204_tier1 --key-name $SSH
 sleep 120
 
 # If no ID, stop with error
-if [ -z "$ID" ]; then echo "FAIL: fail to get ID. Probably VM has not started correctly."; exit 1; fi
+if [[ -z "$ID" ]]; then
+  echo "FAIL: fail to get ID. Probably VM has not started correctly."
+  exit 1
+fi
+
+trap 'cleanup "$ID" "$NETWORK"' EXIT
 
 # Using ID, get IP
 # First, wait it starts
@@ -107,7 +145,10 @@ while [ $i -lt $TIMEOUT ] && [ -z "$(ibmcloud pi instance get $ID | grep 'Extern
   sleep 60
 done
 # Fail to connect
-if [ "$i" == "$TIMEOUT" ]; then echo "FAIL: fail to get IP" ; delete_vm $ID; sleep 120; delete_network $NETWORK; exit 1; fi
+if [ "$i" == "$TIMEOUT" ]; then
+  echo "FAIL: fail to get IP"
+  exit 1
+fi
 
 IP=$(ibmcloud pi instance get $ID | grep -Eo "External Address:[[:space:]]*[0-9.]+" | cut -d ' ' -f3)
 
@@ -119,7 +160,9 @@ i=0
 mkdir -p ~/.ssh
 while [ $i -lt $TIMEOUT ] && ! ssh -vvv -i /etc/ssh-volume/containerd-key ubuntu@$IP echo OK
 do
-  if ! ssh-keyscan -t rsa $IP >> ~/.ssh/known_hosts; then echo "keyscan failed, try again"; fi
+  if ! ssh-keyscan -t rsa $IP >> ~/.ssh/known_hosts; then
+    echo "keyscan failed, try again"
+  fi
   i=$((i+1))
   sleep 60
 done
@@ -138,15 +181,13 @@ if [ "$i" == "$TIMEOUT" ]; then
   done
   # Fail again to connect
   # if [ "$j" == "$TIMEOUT" ]; then echo "FAIL: fail to connect to the VM" ; delete_vm $ID; sleep 120; delete_network $NETWORK; exit 1; fi
-  if [ "$j" == "$TIMEOUT" ]; then echo "FAIL: fail to connect to the VM" ; exit 1; fi
+  if [ "$j" == "$TIMEOUT" ]; then
+    echo "FAIL: fail to connect to the VM"
+    exit 1
+  fi
 fi
 
 # Get test script and execute it
 ssh ubuntu@$IP -i /etc/ssh-volume/containerd-key wget https://raw.githubusercontent.com/ppc64le-cloud/docker-ce-build/main/test-containerd/test_on_powervs.sh
 ssh ubuntu@$IP -i /etc/ssh-volume/containerd-key sudo bash test_on_powervs.sh $RUNC_FLAVOR $TEST_RUNTIME
 scp -i /etc/ssh-volume/containerd-key "ubuntu@$IP:/home/containerd_test/containerd/*.xml" ${OUTPUT}
-
-delete_vm $ID
-sleep 120
-delete_network $NETWORK
-
