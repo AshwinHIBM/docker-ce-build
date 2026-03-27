@@ -173,7 +173,7 @@ if [ "$i" == "$TIMEOUT" ]; then
   sleep 360
   # And try to connect again
   j=0
-  while [ $j -lt $TIMEOUT ] && ! ssh -vvv -i /etc/ssh-volume/containerd-key ubuntu@$IP echo OK
+  while [ $j -lt $TIMEOUT ] && ! ssh -vvv -i /etc/ssh-volume/nonexistent-containerd-key ubuntu@$IP echo OK
   do
     if ! ssh-keyscan -t rsa $IP >> ~/.ssh/known_hosts; then echo "keyscan failed, try again"; fi
     j=$((j+1))
