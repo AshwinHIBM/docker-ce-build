@@ -25,8 +25,6 @@ switchModelRepository() {
     sed -i 's|mv /go/src/github.com/docker/model-cli/dist/docker-model|mv /go/src/github.com/docker/model-cli/cmd/cli/dist/docker-model|' ./deb/common/rules
     sed -i 's|make -C ${RPM_BUILD_DIR}/src/model|make -C ${RPM_BUILD_DIR}/src/model/cmd/cli|' ./rpm/SPECS/docker-model-plugin.spec
     sed -i 's|0755 ${RPM_BUILD_DIR}/src/model|0755 ${RPM_BUILD_DIR}/src/model/cmd/cli|' ./rpm/SPECS/docker-model-plugin.spec
-    sed -i '2iDOCKER_MODEL_REF := $(shell echo "$(DOCKER_MODEL_REF)" | cut -c9-)' ./deb/Makefile
-    sed -i '2iDOCKER_MODEL_REF := $(shell echo "$(DOCKER_MODEL_REF)" | cut -c9-)' ./rpm/Makefile
   popd
 }
 
