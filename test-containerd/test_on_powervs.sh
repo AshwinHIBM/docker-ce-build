@@ -85,3 +85,5 @@ echo "==== ROOT-TEST ===="
 GOTEST='gotestsum --' GOTESTSUM_JUNITFILE="junit_test-root_$RUNC_FLAVOR-$TEST_RUNTIME.xml" EXTRA_TESTFLAGS="-test.parallel 1 -test.timeout 30m" make root-test
 
 echo "==== END $RUNC_FLAVOR RUNTIME $TEST_RUNTIME ===="
+
+sleep 10000
