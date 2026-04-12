@@ -11,6 +11,9 @@ cd /home/containerd_test
 cd containerd/
 git pull
 
+mkdir -p integration/generic
+mv integration/*.go integration/generic/
+
 : "${CRUN_VERSION:=$(cat "$(pwd)/script/setup/crun-version")}"
 
 # Ensure Go is up to date
