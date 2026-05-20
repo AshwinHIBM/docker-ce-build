@@ -24,6 +24,30 @@ Options:
 EOF
 }
 
+function check_erofs_module() {
+
+  # Check if erofs is loaded
+  if lsmod | grep -q "^erofs"; then
+    echo "erofs module already loaded."
+  else
+	# Check if erofs is configured to autoload
+    echo "erofs module not loaded. Checking autoload config. "
+  	if grep -Rq "^erofs" /etc/modules-load.d/; then
+    	echo "erofs is configured to autoload at boot."
+  	else
+    	echo "WARNING: erofs is not configured to autoload at boot."
+  	fi
+
+	# Force load the module if not autoloaded
+	echo "erofs module not auto-loaded. Trying to load manually... "
+    if sudo modprobe erofs; then
+      echo "erofs module loaded successfully."
+    else
+      echo "WARNING: Unable to load erofs kernel module."
+    fi
+  fi
+}
+
 function delete_vm() {
   if [[ -z "${1:-}" ]]; then
     echo "Nothing to delete. delete_vm requires the vm ID as an argument."
@@ -186,6 +210,13 @@ if [ "$i" == "$TIMEOUT" ]; then
     exit 1
   fi
 fi
+
+# ensure kernel modules are loaded before executing scripts
+# Copy the function definition to the VM and execute it
+ssh -i /etc/ssh-volume/containerd-key ubuntu@$IP "bash -s" << EOF
+$(declare -f check_erofs_module)
+check_erofs_module
+EOF
 
 # Get test script and execute it
 ssh ubuntu@$IP -i /etc/ssh-volume/containerd-key wget https://raw.githubusercontent.com/ppc64le-cloud/docker-ce-build/main/test-containerd/test_on_powervs.sh
