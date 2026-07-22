@@ -213,9 +213,10 @@ fi
 
 # ensure kernel modules are loaded before executing scripts
 # Copy the function definition to the VM and execute it
-ssh -i /etc/ssh-volume/containerd-key ubuntu@$IP "bash -s" << EOF
+ssh -t -i /etc/ssh-volume/containerd-key ubuntu@$IP "bash -s" << EOF
 $(declare -f check_erofs_module)
 check_erofs_module
+sudo apt-get install -y erofs-utils
 EOF
 
 # Get test script and execute it
