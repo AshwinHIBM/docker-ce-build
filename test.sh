@@ -444,7 +444,7 @@ before=$SECONDS
 DisNo+=( "debian-bullseye" )
 for PACKTYPE in DEBS RPMS
 do
-  for DISTRO in ${!PACKTYPE}
+  for DISTRO in "debian-bookworm debian-trixie fedora-42 fedora-44"
   do
     No=0
     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
