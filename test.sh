@@ -444,7 +444,7 @@ before=$SECONDS
 DisNo+=( "debian-bullseye" )
 for PACKTYPE in DEBS
 do
-  for DISTRO in "ubuntu-noble ubuntu-jammy"
+  for DISTRO in "ubuntu-noble"
   do
     No=0
     for (( d=0 ; d<${#DisNo[@]} ; d++ ))
