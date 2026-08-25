@@ -8,8 +8,12 @@ RUNC_FLAVOR=$1
 TEST_RUNTIME=$2
 
 cd /home/containerd_test
-cd containerd/
-git pull
+rm -rf containerd-Ashwin
+mkdir containerd-Ashwin
+cd containerd-Ashwin
+git clone https://github.com/AshwinHIBM/containerd.git
+cd containerd
+git checkout mount-options
 
 : "${CRUN_VERSION:=$(cat "$(pwd)/script/setup/crun-version")}"
 
