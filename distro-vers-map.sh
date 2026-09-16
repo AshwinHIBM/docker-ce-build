@@ -10,6 +10,7 @@ distro_vers_to_name() {
     2204) echo "jammy"    ;;
     2404) echo "noble"    ;;
     2604) echo "resolute" ;;
+    2610) echo "stonking" ;;
     *)    echo "${vers}"  ;;
   esac
 }
