@@ -63,6 +63,7 @@ if [[ ${DISABLE_DISTRO_DISCOVERY} != "1" ]]
 then
     echo "Discovering distribution list from git"
     # Get the distributions list in the packaging repository
+    printf "\n" >> ${FILE_ENV}
     sed -nE 's/^target "_distro-((debian|ubuntu)[^"]*)".*/\1/p' packaging/docker-bake.hcl | sed -E '/^(debian|ubuntu)/ s/^(debian|ubuntu)/\1-/' | paste -sd' ' - | sed 's/^/DEBS="/; s/$/"/' >> ${FILE_ENV}
     sed -nE 's/^target "_distro-((fedora|centos)[^"]*)".*/\1/p' packaging/docker-bake.hcl | sed -E '/^(fedora|centos)/ s/^(fedora|centos)/\1-/' | paste -sd' ' - | sed 's/^/RPMS="/; s/$/"/' >> ${FILE_ENV}
     source /workspace/${FILE_ENV}
