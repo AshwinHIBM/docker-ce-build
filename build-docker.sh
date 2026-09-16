@@ -5,12 +5,14 @@ set -u
 
 set -o allexport
 source env.list
+source "$(dirname "$0")/distro-vers-map.sh"
 
 #If DOCKER_BUILD is set to 1, build Docker, otherwise don't
 if [[ ${DOCKER_BUILD} == 0 ]]; then
   echo "DOCKER_BUILD is set to 0. Skipping building of docker packages."
   exit 0
 fi
+docker buildx create --name container --driver=docker-container default
 NCPUs=`grep processor /proc/cpuinfo | wc -l`
 echo "Nber of available CPUs: ${NCPUs}"
 
@@ -48,62 +50,85 @@ STATIC_LOG="static.log"
 # Count of distros
 nb=$((`echo $DEBS | wc -w`+`echo $RPMS | wc -w`))
 
-# Workaround for builkit cache issue where fedora-32/Dockerfile
-# (or the 1st Dockerfile used by buildkit) is used for all fedora's version
-# See https://github.com/moby/buildkit/issues/1368
-patchDockerFiles() {
-  Dockfiles="$(find $1  -name 'Dockerfile')"
-  d=$(date +%s)
-  i=0
-  for file in ${Dockfiles}; do
-      i=$(( i + 1 ))
-      echo "patching timestamp for ${file}"
-      touch -d @$(( d + i )) "${file}"
-  done
-}
-
 # Function to build docker packages
 # $1 : distro
-# $2 : DEBS or RPMS
 buildDocker() {
   echo "= Building docker for $1 ="
   local build_before=$SECONDS
   local DISTRO=$1
-  local PACKTYPE=$2
-  local PACKTYPE_TMP=${PACKTYPE,,}
-  local DIR=${PACKTYPE_TMP:0:3}
-  cd /workspace/docker-ce-packaging/${DIR} && VERSION=${DOCKER_TAG} make ${DIR}build/bundles-ce-${DISTRO}-ppc64le.tar.gz &> ${DIR_LOGS}/build_docker_${DISTRO}.log
+  local DISTRO_NAME="$(cut -d'-' -f1 <<<"${DISTRO}")"
+  local DISTRO_VERS="$(cut -d'-' -f2 <<<"${DISTRO}")"
+  local DISTRO_VERS_NAME
+  DISTRO_VERS_NAME="$(distro_vers_to_name "${DISTRO_VERS}")"
+  cd /workspace/packaging && PKG_REF="docker-${DOCKER_TAG}" LOCAL_PLATFORM="linux/ppc64le" docker buildx bake pkg-docker-engine-"${DISTRO_NAME}""${DISTRO_VERS}" --builder="container"
+  PKG_REF="${COMPOSE_TAG}" LOCAL_PLATFORM="linux/ppc64le" docker buildx bake pkg-compose-"${DISTRO_NAME}""${DISTRO_VERS}" --builder="container"
+  PKG_REF="${BUILDX_TAG}" LOCAL_PLATFORM="linux/ppc64le" docker buildx bake pkg-buildx-"${DISTRO_NAME}""${DISTRO_VERS}" --builder="container"
+
+  # Source directories produced by docker buildx bake
+  local PKG_BASE="/workspace/packaging/bin/pkg"
+  local ENGINE_SRC="${PKG_BASE}/docker-engine/${DISTRO_NAME}${DISTRO_VERS}/linux_ppc64le/${DISTRO_NAME}/${DISTRO_VERS_NAME}/ppc64le"
+  local COMPOSE_SRC="${PKG_BASE}/compose/${DISTRO_NAME}${DISTRO_VERS}/linux_ppc64le/${DISTRO_NAME}/${DISTRO_VERS_NAME}/ppc64le"
+  local BUILDX_SRC="${PKG_BASE}/buildx/${DISTRO_NAME}${DISTRO_VERS}/linux_ppc64le/${DISTRO_NAME}/${DISTRO_VERS_NAME}/ppc64le"
+
+  # Destination inside the archive: bundles/<DOCKER_TAG>/build-deb/<DISTRO_NAME>-<DISTRO_VERS_NAME>
+  local ARCHIVE_INNER="bundles/${DOCKER_TAG}/build-deb/${DISTRO_NAME}-${DISTRO_VERS_NAME}"
+
+  # Staging directory for archive assembly
+  local STAGE_DIR
+  STAGE_DIR="$(mktemp -d)"
+  mkdir -p "${STAGE_DIR}/${ARCHIVE_INNER}"
+
+  # Collect docker-engine packages (glob on package name to be resilient to version mismatches)
+  cp "${ENGINE_SRC}/docker-ce-rootless-extras_"*"_ppc64el.deb"     "${STAGE_DIR}/${ARCHIVE_INNER}/"
+  cp "${ENGINE_SRC}/docker-ce_"*"_ppc64el.changes"                 "${STAGE_DIR}/${ARCHIVE_INNER}/"
+  cp "${ENGINE_SRC}/docker-ce_"*"_ppc64el.buildinfo"               "${STAGE_DIR}/${ARCHIVE_INNER}/"
+  cp "${ENGINE_SRC}/docker-ce_"*"_ppc64el.deb"                     "${STAGE_DIR}/${ARCHIVE_INNER}/"
+
+  # Collect compose package (glob on package name to be resilient to version mismatches)
+  cp "${COMPOSE_SRC}/docker-compose-plugin_"*"_ppc64el.deb"        "${STAGE_DIR}/${ARCHIVE_INNER}/"
+
+  # Collect buildx package (glob on package name to be resilient to version mismatches)
+  cp "${BUILDX_SRC}/"*"_ppc64el."*                                  "${STAGE_DIR}/${ARCHIVE_INNER}/"
+
+  # Create archive and place it where the downstream check expects it
+  # Archive name uses the codename (e.g. debian-bookworm) not the numeric version (e.g. debian-12)
+  local DISTRO_NAMED="${DISTRO_NAME}-${DISTRO_VERS_NAME}"
+  mkdir -p /workspace/packaging/build
+  tar -czf "/workspace/packaging/build/bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz" \
+      -C "${STAGE_DIR}" bundles
+
+  rm -rf "${STAGE_DIR}"
 
   # Check if the dynamic docker package has been built
-  if test -f ${DIR}build/bundles-ce-${DISTRO}-ppc64le.tar.gz
+  if test -f /workspace/packaging/build/bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz
   then
-    echo "Docker for ${DISTRO} built"
+    echo "Docker for ${DISTRO_NAMED} built"
 
-    echo "== Copying dynamic docker package bundles-ce-${DISTRO}-ppc64le.tar.gz to ${DIR_DOCKER} =="
-    cp -r ${DIR}build/bundles-ce-${DISTRO}-ppc64le.tar.gz ${DIR_DOCKER}
+    echo "== Copying dynamic docker package bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz to ${DIR_DOCKER} =="
+    cp -r /workspace/packaging/build/bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz ${DIR_DOCKER}
 
-    echo "== Copying dynamic docker package bundles-ce-${DISTRO}-ppc64le.tar.gz to ${DIR_DOCKER_COS} =="
-    cp -r ${DIR}build/bundles-ce-${DISTRO}-ppc64le.tar.gz ${DIR_DOCKER_COS}
+    echo "== Copying dynamic docker package bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz to ${DIR_DOCKER_COS} =="
+    cp -r /workspace/packaging/build/bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz ${DIR_DOCKER_COS}
 
     echo "== Copying log to ${DIR_LOGS_COS} =="
     cp ${DIR_LOGS}/build_docker_${DISTRO}.log ${DIR_LOGS_COS}/build_docker_${DISTRO}.log
 
     # Checking everything has been copied
-    if test -f ${DIR_DOCKER}/bundles-ce-${DISTRO}-ppc64le.tar.gz && test -f ${DIR_DOCKER_COS}/bundles-ce-${DISTRO}-ppc64le.tar.gz && test -f ${DIR_LOGS_COS}/build_docker_${DISTRO}.log
+    if test -f ${DIR_DOCKER}/bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz && test -f ${DIR_DOCKER_COS}/bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz && test -f ${DIR_LOGS_COS}/build_docker_${DISTRO}.log
     then
-      echo "Docker for ${DISTRO} was copied."
+      echo "Docker for ${DISTRO_NAMED} was copied."
     else
-      echo "Docker for ${DISTRO} was not copied."
+      echo "Docker for ${DISTRO_NAMED} was not copied."
     fi
   else
-    echo "ERROR: Docker for ${DISTRO} not built"
+    echo "ERROR: Docker for ${DISTRO_NAMED} not built"
 
     echo "== Copying log to ${DIR_LOGS_COS} =="
     cp ${DIR_LOGS}/build_docker_${DISTRO}.log ${DIR_LOGS_COS}/build_docker_${DISTRO}.log
 
-    echo "== Log start for the build failure of ${DISTRO} =="
+    echo "== Log start for the build failure of ${DISTRO_NAMED} =="
     cat ${DIR_LOGS}/build_docker_${DISTRO}.log
-    echo "== Log end for the build failure of ${DISTRO} =="
+    echo "== Log end for the build failure of ${DISTRO_NAMED} =="
 
   fi
 
@@ -112,12 +137,6 @@ buildDocker() {
 }
 
 echo "# Building dynamic docker packages #"
-
-cd /workspace/docker-ce-packaging/deb
-patchDockerFiles .
-cd /workspace/docker-ce-packaging/rpm
-patchDockerFiles .
-cd /workspace
 
 before=$SECONDS
 # 1) Build the list of distros
@@ -160,7 +179,7 @@ while true
 do
   while [ $n -lt $max ] && [ $i -lt ${nD} ]
   do
-    buildDocker ${Dis[i]} ${Pac[i]} &
+    buildDocker ${Dis[i]} &
     pids+=( $! )
     echo "Build distrib: i:$i ${Dis[i]} pid:${pids[i]}"
     let "n=n+1"
