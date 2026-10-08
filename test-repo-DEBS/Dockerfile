@@ -40,7 +40,7 @@ RUN apt-get -y update && apt-get -y upgrade && DEBIAN_FRONTEND="noninteractive" 
 RUN set -eux; curl -fsSL https://${REPO_HOSTNAME}/linux/${DISTRO_NAME}/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg &&\
     echo "deb [arch=ppc64el signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://${REPO_HOSTNAME}/linux/${DISTRO_NAME} ${DISTRO_VERS} stable"\
     | tee /etc/apt/sources.list.d/docker.list > /dev/null  &&\
-    apt-get update && apt-get -y install docker-ce docker-ce-cli containerd.io
+    apt-get update && apt-get -y install docker-ce docker-ce-cli containerd.io=2.3.3-1~ubuntu.24.04~noble
 
 ##
 #Docker in Docker inspired from

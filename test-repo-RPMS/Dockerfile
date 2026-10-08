@@ -25,7 +25,7 @@ RUN set -eux; yum -y install make gcc git glibc-static cmake findutils procps-ng
 
 RUN set -eux; yum install -y yum-utils &&\
 	yum-config-manager --add-repo https://${REPO_HOSTNAME}/linux/${DISTRO_NAME}/docker-ce-staging.repo &&\
-	yum -y install docker-ce docker-ce-cli containerd.io
+	yum -y install docker-ce docker-ce-cli containerd.io=2.3.3-3.1.fc44.ppc64le
 
 ##
 #Docker in Docker inspired from
