@@ -108,7 +108,7 @@ buildDocker() {
   mkdir -p /workspace/packaging/build
   tar -czf "/workspace/packaging/build/bundles-ce-${DISTRO_NAMED}-ppc64le.tar.gz" \
       -C "${STAGE_DIR}" bundles
-
+sleep 10000
   rm -rf "${STAGE_DIR}"
 
   # Check if the dynamic docker package has been built
