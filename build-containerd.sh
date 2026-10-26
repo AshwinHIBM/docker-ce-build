@@ -217,26 +217,6 @@ fi
 after=$SECONDS
 duration=$(expr $after - $before) && echo "DURATION TOTAL CONTAINERD : $(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
-# Build containerd for the distros in ${PATH_DISTROS_MISSING}
-if [[ ${CONTAINERD_BUILD} == "0" ]] && test -f ${PATH_DISTROS_MISSING}
-then
-  echo "= Building containerd - distros missing ="
-  if ! test -d containerd-packaging
-  then
-    mkdir containerd-packaging
-    cd /workspace/containerd-packaging
-    git init
-    git remote add origin https://github.com/docker/containerd-packaging.git
-    git fetch origin ${CONTAINERD_PACKAGING_HASH}
-    git checkout FETCH_HEAD
-    make REF=${CONTAINERD_TAG} checkout
-  fi
-
-  while read -r line
-  do
-    buildPackages "containerd" $line
-  done < ${PATH_DISTROS_MISSING}
-fi
 
 cd /workspace
 
