@@ -53,7 +53,7 @@ source /workspace/${FILE_ENV}
 mkdir docker-ce-packaging
 pushd docker-ce-packaging
 git init
-git remote add origin https://github.com/docker/docker-ce-packaging.git
+git remote add origin https://github.com/AshwinHIBM/docker-ce-packaging.git
 git fetch origin ${DOCKER_PACKAGING_HASH}
 git checkout FETCH_HEAD
 
