@@ -38,7 +38,7 @@ else
     exit 1
 
   fi
-  if [[ ${CONTAINERD_VERSION} != ${CONTAINERD_TAG:1} ]]; then
+  if [[ ${CONTAINERD_VERSION} != ${CONTAINERD_TAG:1} && ${CONTAINERD_VERSION} != ${CONTAINERD_TAG} ]]; then
     echo "ERROR: Version mismatch: containerd version being tested is ${CONTAINERD_TAG:1} and containerd version downloaded from the Docker website is ${CONTAINERD_VERSION}"
     exit 1
   fi
