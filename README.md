@@ -4,7 +4,7 @@ This repository contains the scripts called by the Docker-CE and containerd buil
 
 The goal of these scripts and the two associated prow jobs is to automate the process of building the docker-ce and containerd packages for ppc64le and of testing them. The packages would then be shared with the Docker team and be available on the https://download.docker.com package repositories.
 
-To build these packages, we use the [docker-ce-packaging](https://github.com/docker/docker-ce-packaging) and the [containerd-packaging](https://github.com/docker/containerd-packaging/) repositories.
+To build these packages, we use the [docker-ce-packaging](https://github.com/docker/docker-ce-packaging) and the [packaging](https://github.com/docker/packaging) repositories.
 
 The corresponding prow jobs are:
 1. postsubmit-build-docker
@@ -26,7 +26,6 @@ This postsubmit prow job is triggered by the editing of the [env.list](https://g
 - DOCKER_PACKAGING_HASH : commit associated to the latest version of docker-packaging
 - CONTAINERD_BUILD : if set to 1, it means that a new containerd version has been released that we have not built it yet ; if set to 0, it means that we have already built it in a previous prow job and that we do not need to build it again (we will still verify that no new distribution has been added).
 - CONTAINERD_TAG : latest version of containerd
-- CONTAINERD_PACKAGING_HASH : commit associated to the latest version of containerd
 - RUNC_VERS : runc version used to build the static packages
 - DIND_IMG_STATIC_HASH: The image hash of the Docker-in-Docker image that will be used as the base image to build static binaries. It can be obtained from https://quay.io/repository/powercloud/docker-ce-build
 

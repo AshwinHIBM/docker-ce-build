@@ -99,10 +99,10 @@ testDynamicPackages() {
     if [[ ${PACKTYPE} == "DEBS" ]]
     then
       # For the debian packages, we don't want the dbgsym package
-      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/containerd.io_${CONTAINERD_TAG_2}*_ppc64*.deb .
+      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/ppc64el/containerd.io_${CONTAINERD_TAG_2}*_ppc64*.deb .
     elif [[ ${PACKTYPE} == "RPMS" ]]
     then
-      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}/containerd.io-${CONTAINERD_TAG_2}*.ppc64*.rpm .
+      cp ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS}/ppc64le/containerd.io-${CONTAINERD_TAG_2}*.ppc64*.rpm .
     fi
 
     # Check if we have the docker-ce and containerd packages and the Dockerfile and the test-launch.sh
