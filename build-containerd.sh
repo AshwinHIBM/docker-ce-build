@@ -24,11 +24,12 @@ checkDirectory() {
 DIR_COS_BUCKET="/mnt/s3_ppc64le-docker/prow-docker/build-docker-${DOCKER_TAG}_${DATE}"
 checkDirectory ${DIR_COS_BUCKET}
 
+DIR_CONTAINERD="/workspace/containerd-${CONTAINERD_TAG}_${DATE}"
+DIR_CONTAINERD_COS="${DIR_COS_BUCKET}/containerd-${CONTAINERD_TAG}"
+
 if [[ ${CONTAINERD_BUILD} != "0" ]]
 then
-  DIR_CONTAINERD="/workspace/containerd-${CONTAINERD_TAG}_${DATE}"
   checkDirectory ${DIR_CONTAINERD}
-  DIR_CONTAINERD_COS="${DIR_COS_BUCKET}/containerd-${CONTAINERD_TAG}"
   checkDirectory ${DIR_CONTAINERD_COS}
 fi
 
@@ -73,19 +74,29 @@ buildContainerd() {
     echo "Containerd for ${DISTRO} built"
 
     echo "== Copying packages to ${DIR_CONTAINERD} =="
+    local ARCH_DIR="ppc64le"
+    if [[ "${DISTRO_NAME}" == "ubuntu" || "${DISTRO_NAME}" == "debian" ]]
+    then
+      ARCH_DIR="ppc64el"
+    fi
+
     checkDirectory ${DIR_CONTAINERD}/${DISTRO_NAME}
-    cp -r /workspace/containerd-packaging-${DISTRO_NAME}-${DISTRO_VERS}/bin/pkg/containerd/${DISTRO_NAME}${DISTRO_VERS}/linux_ppc64le/${DISTRO_NAME}/${DISTRO_VERS_NAME}/ppc64le/. ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}
+    checkDirectory ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}
+    checkDirectory ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/${ARCH_DIR}
+    cp -r /workspace/containerd-packaging-${DISTRO_NAME}-${DISTRO_VERS}/bin/pkg/containerd/${DISTRO_NAME}${DISTRO_VERS}/linux_ppc64le/${DISTRO_NAME}/${DISTRO_VERS_NAME}/ppc64le/. ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/${ARCH_DIR}
 
     echo "=== Copying packages to ${DIR_CONTAINERD_COS} ==="
     checkDirectory ${DIR_CONTAINERD_COS}/${DISTRO_NAME}
-    cp -r ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/. ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS_NAME}
+    checkDirectory ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS_NAME}
+    checkDirectory ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/${ARCH_DIR}
+    cp -r ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/${ARCH_DIR}/. ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/${ARCH_DIR}
 
     echo "==== Copying log to ${DIR_LOGS_COS} ===="
     cp ${DIR_LOGS}/build_containerd_${DISTRO}.log ${DIR_LOGS_COS}/build_containerd_${DISTRO}.log
 
     # Checking everything has been copied
-    if [[ ! -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME} || \
-          ! -d ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS_NAME} ]]
+    if [[ ! -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/${ARCH_DIR} || \
+          ! -d ${DIR_CONTAINERD_COS}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/${ARCH_DIR} ]]
     then
       echo "ERROR: Containerd for ${DISTRO} was not copied."
     fi
@@ -194,13 +205,30 @@ else
     # Check if the package is there for this distribution
     echo "= Check containerd ="
 
-    DIR_CONTAINERD="/workspace/containerd-${CONTAINERD_TAG}_${DATE}"
-
     DISTRO_NAME="$(cut -d'-' -f1 <<<"${DISTRO}")"
     DISTRO_VERS="$(cut -d'-' -f2 <<<"${DISTRO}")"
     DISTRO_VERS_NAME="$(distro_vers_to_name "${DISTRO_VERS}")"
 
-    if test -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}
+    ARCH_DIR="ppc64le"
+    if [[ "${DISTRO_NAME}" == "ubuntu" || "${DISTRO_NAME}" == "debian" ]]
+    then
+      ARCH_DIR="ppc64el"
+    fi
+
+    already_built=0
+    if [[ -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/${ARCH_DIR} ]]
+    then
+      already_built=1
+    elif [[ -d ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME} ]]
+    then
+      # Check if there are any .deb or .rpm files directly inside the old directory
+      if ls ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/*.deb &>/dev/null || ls ${DIR_CONTAINERD}/${DISTRO_NAME}/${DISTRO_VERS_NAME}/*.rpm &>/dev/null
+      then
+        already_built=1
+      fi
+    fi
+
+    if [[ ${already_built} -eq 1 ]]
     then
       echo "${DISTRO} already built"
     else
@@ -221,20 +249,24 @@ duration=$(expr $after - $before) && echo "DURATION TOTAL CONTAINERD : $(($durat
 if [[ ${CONTAINERD_BUILD} == "0" ]] && test -f ${PATH_DISTROS_MISSING}
 then
   echo "= Building containerd - distros missing ="
-  if ! test -d containerd-packaging
+  checkDirectory ${DIR_CONTAINERD}
+  checkDirectory ${DIR_CONTAINERD_COS}
+  docker buildx create --name container --driver=docker-container default || true
+
+  if ! test -d /workspace/packaging
   then
-    mkdir containerd-packaging
-    cd /workspace/containerd-packaging
+    mkdir -p /workspace/packaging
+    cd /workspace/packaging
     git init
-    git remote add origin https://github.com/docker/containerd-packaging.git
-    git fetch origin ${CONTAINERD_PACKAGING_HASH}
-    git checkout FETCH_HEAD
-    make REF=${CONTAINERD_TAG} checkout
+    git remote add origin https://github.com/docker/packaging.git
+    git fetch origin
+    git checkout main
+    cd /workspace
   fi
 
   while read -r line
   do
-    buildPackages "containerd" $line
+    buildContainerd "${line}"
   done < ${PATH_DISTROS_MISSING}
 fi
 
