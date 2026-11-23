@@ -251,16 +251,15 @@ then
   echo "= Building containerd - distros missing ="
   checkDirectory ${DIR_CONTAINERD}
   checkDirectory ${DIR_CONTAINERD_COS}
-  docker buildx create --name container --driver=docker-container default || true
+  # Reuse the builder if it already exists; any other create failure is a real error
+  if ! docker buildx inspect container &>/dev/null
+  then
+    docker buildx create --name container --driver=docker-container default || exit 1
+  fi
 
   if ! test -d /workspace/packaging
   then
-    mkdir -p /workspace/packaging
-    cd /workspace/packaging
-    git init
-    git remote add origin https://github.com/docker/packaging.git
-    git fetch origin
-    git checkout main
+    git clone -b main https://github.com/docker/packaging.git
     cd /workspace
   fi
 

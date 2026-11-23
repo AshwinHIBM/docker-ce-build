@@ -4,7 +4,7 @@ This repository contains the scripts called by the Docker-CE and containerd buil
 
 The goal of these scripts and the two associated prow jobs is to automate the process of building the docker-ce and containerd packages for ppc64le and of testing them. The packages would then be shared with the Docker team and be available on the https://download.docker.com package repositories.
 
-To build these packages, we use the [docker-ce-packaging](https://github.com/docker/docker-ce-packaging) and the [packaging](https://github.com/docker/packaging) repositories.
+To build these packages, we build docker from [docker-ce-packaging](https://github.com/docker/docker-ce-packaging) and containerd from [packaging](https://github.com/docker/packaging).
 
 The corresponding prow jobs are:
 1. postsubmit-build-docker
